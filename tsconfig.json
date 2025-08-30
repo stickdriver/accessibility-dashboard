@@ -1,0 +1,116 @@
+{
+  "compilerOptions": {
+    // Language and module settings
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "es6", "es2020"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    
+    // Path mapping for clean imports
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/services/*": ["./src/services/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/app/*": ["./src/app/*"]
+    },
+
+    // Strict type checking options
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    
+    // Advanced options
+    "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true,
+    "allowSyntheticDefaultImports": true,
+    
+    // Next.js specific
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    
+    // Additional type checking
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    
+    // Emit options
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "removeComments": true,
+    "importHelpers": true,
+    
+    // Experimental options
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "src/**/*"
+  ],
+  
+  "exclude": [
+    "node_modules",
+    ".next",
+    "out",
+    "dist",
+    "coverage",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "jest.config.js",
+    "next.config.js",
+    "tailwind.config.ts",
+    "playwright.config.ts"
+  ],
+  
+  // TypeScript project references (for monorepo support)
+  "references": [],
+  
+  // Compiler diagnostics
+  "compileOnSave": false,
+  
+  // Watch options
+  "watchOptions": {
+    "excludeFiles": [
+      "node_modules/**/*",
+      ".next/**/*",
+      "dist/**/*"
+    ],
+    "excludeDirectories": [
+      "node_modules",
+      ".next",
+      "dist"
+    ]
+  }
+}
