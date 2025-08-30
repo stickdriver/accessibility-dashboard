@@ -9,7 +9,7 @@ WORKDIR /app
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
 RUN \
-  if [ -f package-lock.json ]; then npm ci --only=production; \
+  if [ -f package-lock.json ]; then npm ci; \
   else echo "Lockfile not found." && exit 1; \
   fi
 
@@ -21,11 +21,15 @@ COPY . .
 
 # Environment variables for build
 ARG NODE_ENV=production
+ARG NEXT_PUBLIC_CONVEX_URL
+ARG CLERK_SECRET_KEY
 ARG SCANNER_SERVICE_URL
 ARG ENABLE_ANALYTICS=true
 ARG DASHBOARD_TITLE="Accessibility Scanner Dashboard"
 
 ENV NODE_ENV=$NODE_ENV
+ENV NEXT_PUBLIC_CONVEX_URL=$NEXT_PUBLIC_CONVEX_URL
+ENV CLERK_SECRET_KEY=$CLERK_SECRET_KEY
 ENV SCANNER_SERVICE_URL=$SCANNER_SERVICE_URL
 ENV ENABLE_ANALYTICS=$ENABLE_ANALYTICS
 ENV DASHBOARD_TITLE=$DASHBOARD_TITLE
