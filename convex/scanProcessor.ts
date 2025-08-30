@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 import { internalAction, internalMutation } from "./_generated/server";
-import { scanWebsite } from "./accessibilityScanner";
 
 export const processScan = internalAction({
   args: { scanId: v.id("scans") },

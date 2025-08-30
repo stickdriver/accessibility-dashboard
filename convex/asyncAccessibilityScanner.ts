@@ -23,7 +23,7 @@ export const scanWebsiteAsync = action({
     })),
     scanId: v.optional(v.string())
   },
-  handler: async (ctx: any, { url, scanType, customerTier = "free", options = {}, scanId }: {
+  handler: async (_ctx: any, { url, scanType, customerTier = "free", options = {}, scanId }: {
     url: string,
     scanType: "single_page" | "full_site",
     customerTier?: "free" | "basic" | "premium" | "enterprise",
@@ -46,7 +46,7 @@ export const pollJobStatus = action({
     maxWaitTime: v.optional(v.number()), // Maximum time to wait in milliseconds
     pollInterval: v.optional(v.number()), // Polling interval in milliseconds
   },
-  handler: async (ctx: any, { jobId, maxWaitTime = 120000, pollInterval = 2000 }: {
+  handler: async (_ctx: any, { jobId, maxWaitTime = 120000, pollInterval = 2000 }: {
     jobId: string,
     maxWaitTime?: number,
     pollInterval?: number
@@ -60,7 +60,7 @@ export const getJobStatus = action({
   args: {
     jobId: v.string()
   },
-  handler: async (ctx: any, { jobId }: { jobId: string }) => {
+  handler: async (_ctx: any, { jobId }: { jobId: string }) => {
     return await fetchJobStatus(jobId);
   }
 });
@@ -70,7 +70,7 @@ export const getJobProgress = action({
   args: {
     jobId: v.string()
   },
-  handler: async (ctx: any, { jobId }: { jobId: string }) => {
+  handler: async (_ctx: any, { jobId }: { jobId: string }) => {
     return await fetchJobProgress(jobId);
   }
 });
@@ -80,7 +80,7 @@ export const cancelJob = action({
   args: {
     jobId: v.string()
   },
-  handler: async (ctx: any, { jobId }: { jobId: string }) => {
+  handler: async (_ctx: any, { jobId }: { jobId: string }) => {
     return await cancelAsyncJob(jobId);
   }
 });

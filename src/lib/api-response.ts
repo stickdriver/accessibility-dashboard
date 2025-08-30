@@ -21,11 +21,16 @@ export function sendSuccess<T>(
   message?: string,
   statusCode = 200
 ): void {
-  res.status(statusCode).json({
+  const response: APISuccess<T> = {
     success: true,
     data,
-    message,
-  });
+  };
+  
+  if (message !== undefined) {
+    response.message = message;
+  }
+  
+  res.status(statusCode).json(response);
 }
 
 export function sendError(
@@ -35,12 +40,20 @@ export function sendError(
   code?: string,
   details?: any
 ): void {
-  res.status(statusCode).json({
+  const response: APIError = {
     success: false,
     error,
-    code,
-    details,
-  });
+  };
+  
+  if (code !== undefined) {
+    response.code = code;
+  }
+  
+  if (details !== undefined) {
+    response.details = details;
+  }
+  
+  res.status(statusCode).json(response);
 }
 
 export function handleAPIError(

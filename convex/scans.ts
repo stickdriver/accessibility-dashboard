@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { mutation, query, action } from "./_generated/server";
-import { getCurrentUsage, incrementUsage } from "./usage";
+import { mutation, query } from "./_generated/server";
+import { incrementUsage } from "./usage";
 // Temporarily disabled auth
 // import { getAuthUserId } from "@convex-dev/auth/server";
 

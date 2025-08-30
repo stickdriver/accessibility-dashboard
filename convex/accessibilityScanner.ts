@@ -22,7 +22,7 @@ export const scanWebsite = action({
     })),
     scanId: v.optional(v.string())
   },
-  handler: async (ctx: any, { url, scanType, options = {}, scanId }: {
+  handler: async (_ctx: any, { url, scanType, options = {}, scanId }: {
     url: string,
     scanType: "single_page" | "full_site",
     options?: any,

@@ -435,7 +435,7 @@ export class ScannerServiceAPI {
 export class ScannerAPIError extends Error {
   constructor(
     public status: number,
-    public message: string,
+    public override message: string,
     public code?: string,
     public details?: string
   ) {

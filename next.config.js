@@ -180,9 +180,6 @@ const nextConfig = {
     // Disable source maps in production for security
     productionBrowserSourceMaps: false,
     
-    // Optimize for production
-    optimizeCss: true,
-    
     // Generate build ID for cache invalidation
     generateBuildId: async () => {
       // Use git commit hash as build ID

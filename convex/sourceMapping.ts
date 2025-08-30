@@ -49,10 +49,16 @@ function enhanceNodeInfo(node: any, violationId: string): EnhancedSourceInfo {
   };
 
   // Add line numbers if available (from DOM inspection)
-  enhanced.lineNumber = extractLineNumber(node.html);
+  const lineNumber = extractLineNumber(node.html);
+  if (lineNumber !== undefined) {
+    enhanced.lineNumber = lineNumber;
+  }
   
   // Extract component context (React/Vue patterns)
-  enhanced.componentName = extractComponentName(node.target[0]);
+  const componentName = extractComponentName(node.target[0]);
+  if (componentName !== undefined) {
+    enhanced.componentName = componentName;
+  }
   
   // Get computed styles for styling issues
   if (isStyleRelatedViolation(violationId)) {
@@ -105,7 +111,7 @@ function isStyleRelatedViolation(violationId: string): boolean {
   return styleViolations.includes(violationId);
 }
 
-function extractRelevantStyles(node: any, violationId: string): Record<string, string> {
+function extractRelevantStyles(_node: any, violationId: string): Record<string, string> {
   // This would extract computed styles relevant to the violation
   const relevantProperties: Record<string, string[]> = {
     'color-contrast': ['color', 'background-color', 'font-size', 'font-weight'],
@@ -143,7 +149,7 @@ function extractParentContext(selector: string): string[] {
   return parts.slice(0, -1); // All but the last (target) element
 }
 
-function generateSpecificFix(violationId: string, node: any): string {
+function generateSpecificFix(violationId: string, _node: any): string {
   const fixes: Record<string, string> = {
     'image-alt': 'Add alt attribute: alt="[descriptive text]"',
     'color-contrast': 'Increase contrast ratio to at least 4.5:1 for normal text',
