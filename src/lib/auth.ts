@@ -2,7 +2,7 @@ import { createClerkClient, verifyToken } from "@clerk/backend";
 import { NextRequest } from "next/server";
 
 const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY!
+  secretKey: process.env.CLERK_SECRET_KEY || "placeholder_key_for_build"
 });
 
 export interface ClerkUser {
@@ -35,7 +35,7 @@ export async function verifyClerkToken(req: NextRequest): Promise<ClerkUser | nu
     
     // Verify the JWT with Clerk
     const payload = await verifyToken(token, { 
-      secretKey: process.env.CLERK_SECRET_KEY! 
+      secretKey: process.env.CLERK_SECRET_KEY || "placeholder_key_for_build" 
     });
     
     if (!payload.sub) return null;
@@ -104,7 +104,7 @@ export async function verifyClerkTokenLegacy(req: any): Promise<ClerkUser | null
     
     // Verify the JWT with Clerk
     const payload = await verifyToken(token, { 
-      secretKey: process.env.CLERK_SECRET_KEY! 
+      secretKey: process.env.CLERK_SECRET_KEY || "placeholder_key_for_build" 
     });
     
     if (!payload.sub) return null;

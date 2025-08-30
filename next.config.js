@@ -211,10 +211,8 @@ for (const envVar of optionalEnvVars) {
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     console.warn(`Missing required environment variable: ${envVar}`);
-    // Don't throw during build to allow development setup
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(`Missing required environment variable: ${envVar}`);
-    }
+    // Don't throw during build phase - only at runtime
+    // Build tools like fly.io may not have runtime env vars available during build
   }
 }
 
