@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-12-18.acacia",
+  apiVersion: "2025-08-27.basil",
 });
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   try {
     // Fetch live pricing from Stripe (if configured)
     let stripePricing: { [key: string]: { price: number | null } } = {
@@ -25,14 +25,22 @@ export async function GET(request: Request) {
           stripe.prices.retrieve(process.env.STRIPE_PRICE_ID_PROFESSIONAL)
         ]);
 
-        stripePricing.essential.price = essentialPrice.unit_amount ? essentialPrice.unit_amount / 100 : null;
-        stripePricing.professional.price = professionalPrice.unit_amount ? professionalPrice.unit_amount / 100 : null;
+        if (stripePricing.essential) {
+          stripePricing.essential.price = essentialPrice.unit_amount ? essentialPrice.unit_amount / 100 : null;
+        }
+        if (stripePricing.professional) {
+          stripePricing.professional.price = professionalPrice.unit_amount ? professionalPrice.unit_amount / 100 : null;
+        }
       }
     } catch (stripeError) {
       console.warn("Failed to fetch Stripe pricing, using fallback:", stripeError);
       // Use fallback pricing if Stripe fails
-      stripePricing.essential.price = 29;
-      stripePricing.professional.price = 99;
+      if (stripePricing.essential) {
+        stripePricing.essential.price = 29;
+      }
+      if (stripePricing.professional) {
+        stripePricing.professional.price = 99;
+      }
     }
 
     // Define tier structure based on Stripe products
@@ -61,7 +69,7 @@ export async function GET(request: Request) {
         id: "essential", 
         name: "Essential Accessibility Compliance",
         shortName: "Essential",
-        price: stripePricing.essential.price, // From Stripe or fallback
+        price: stripePricing.essential?.price || 29, // From Stripe or fallback
         scanLimit: 150,
         scanLimitPeriod: "month",
         websites: 5,
@@ -82,7 +90,7 @@ export async function GET(request: Request) {
         id: "professional",
         name: "Professional Accessibility Suite", 
         shortName: "Professional",
-        price: stripePricing.professional.price, // From Stripe or fallback
+        price: stripePricing.professional?.price || 99, // From Stripe or fallback
         scanLimit: 500,
         scanLimitPeriod: "month", 
         websites: 999,
