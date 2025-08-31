@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-08-27.basil",
-});
+// Initialize Stripe client only when needed and with proper fallback
+const getStripeClient = () => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return null;
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-08-27.basil",
+  });
+};
 
 export async function GET(_request: Request) {
   try {
@@ -15,7 +21,8 @@ export async function GET(_request: Request) {
     };
 
     try {
-      if (process.env.STRIPE_SECRET_KEY && 
+      const stripe = getStripeClient();
+      if (stripe && 
           process.env.STRIPE_PRICE_ID_ESSENTIAL && 
           process.env.STRIPE_PRICE_ID_PROFESSIONAL) {
         
