@@ -7,7 +7,7 @@ const getStripeClient = () => {
     return null;
   }
   return new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2025-08-27.basil",
+    apiVersion: "2024-12-18.acacia",
   });
 };
 
@@ -141,21 +141,65 @@ export async function GET(_request: Request) {
   } catch (error) {
     console.error("Error fetching tiers:", error);
     
-    // Fallback response
-    return NextResponse.json({
-      error: "Unable to fetch pricing tiers",
+    // Enhanced fallback response for production
+    const response = NextResponse.json({
+      success: true,
       fallback: true,
       tiers: {
         starter: {
           id: "starter",
           name: "Starter Accessibility Scan", 
+          shortName: "Starter",
           price: 0,
           scanLimit: 10,
+          scanLimitPeriod: "month",
           websites: 1,
-          features: ["Basic WCAG scanning", "PDF export"]
+          features: ["10 pages scanned per month", "Basic WCAG scanning", "PDF export"],
+          popular: false,
+          stripeProductId: null,
+          stripePriceId: null
+        },
+        essential: {
+          id: "essential",
+          name: "Essential Accessibility Compliance", 
+          shortName: "Essential",
+          price: 49,
+          scanLimit: 150,
+          scanLimitPeriod: "month",
+          websites: 5,
+          features: ["150 pages scanned per month", "Email support", "Basic integration"],
+          popular: true,
+          stripeProductId: null,
+          stripePriceId: null
+        },
+        professional: {
+          id: "professional",
+          name: "Professional Accessibility Suite", 
+          shortName: "Professional",
+          price: 149,
+          scanLimit: 500,
+          scanLimitPeriod: "month",
+          websites: 999,
+          features: ["500 pages scanned per month", "Priority support", "Team collaboration"],
+          popular: false,
+          stripeProductId: null,
+          stripePriceId: null
         }
+      },
+      metadata: {
+        currency: "usd",
+        billingPeriod: "month",
+        lastUpdated: new Date().toISOString(),
+        source: "fallback_error"
       }
-    }, { status: 500 });
+    });
+
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    return response;
   }
 }
 
