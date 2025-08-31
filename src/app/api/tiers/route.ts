@@ -7,7 +7,7 @@ const getStripeClient = () => {
     return null;
   }
   return new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2024-12-18.acacia",
+    apiVersion: "2025-08-27.basil",
   });
 };
 
@@ -132,7 +132,19 @@ export async function GET(_request: Request) {
     });
 
     // Add CORS headers to allow frontend access
-    response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      'http://localhost:3002',
+      'http://localhost:3003',
+      'https://auditable.dev'
+    ];
+    const origin = _request.headers.get('origin');
+    if (origin && allowedOrigins.includes(origin)) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+    } else {
+      response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    }
     response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -195,7 +207,19 @@ export async function GET(_request: Request) {
     });
 
     // Add CORS headers
-    response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      'http://localhost:3002',
+      'http://localhost:3003',
+      'https://auditable.dev'
+    ];
+    const origin = _request.headers.get('origin');
+    if (origin && allowedOrigins.includes(origin)) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+    } else {
+      response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    }
     response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -204,10 +228,22 @@ export async function GET(_request: Request) {
 }
 
 // Handle CORS preflight requests
-export async function OPTIONS() {
+export async function OPTIONS(request: Request) {
   const response = new NextResponse(null, { status: 200 });
   
-  response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001', 
+    'http://localhost:3002',
+    'http://localhost:3003',
+    'https://auditable.dev'
+  ];
+  const origin = request.headers.get('origin');
+  if (origin && allowedOrigins.includes(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+  } else {
+    response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+  }
   response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
   

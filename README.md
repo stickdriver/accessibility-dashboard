@@ -4,6 +4,21 @@ A comprehensive admin dashboard for monitoring and managing the accessibility sc
 
 ## 🚀 Quick Start
 
+## 🌐 Production Deployment
+
+**Live URL**: https://accessibility-dashboard.fly.dev
+
+### Production Status
+- ✅ **Backend APIs**: All endpoints operational
+- ✅ **Stripe Integration**: Live billing with webhooks
+- ✅ **Authentication**: Clerk integration active
+- ✅ **CORS**: Configured for https://auditable.dev
+
+### Production Environment
+- **Platform**: Fly.io
+- **Webhook Endpoint**: https://accessibility-dashboard.fly.dev/api/webhooks/stripe
+- **Tier Pricing API**: https://accessibility-dashboard.fly.dev/api/tiers
+
 ### Prerequisites
 - Node.js 18.0 or later
 - npm 9.0 or later
