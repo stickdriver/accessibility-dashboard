@@ -6,8 +6,9 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
+# Install dependencies based on the preferred package manager  
 COPY package.json package-lock.json* ./
+# Install ALL dependencies including devDependencies needed for build
 RUN \
   if [ -f package-lock.json ]; then npm ci; \
   else echo "Lockfile not found." && exit 1; \
@@ -41,6 +42,9 @@ RUN \
   else echo "Lockfile not found." && exit 1; \
   fi
 
+# Ensure public directory exists for copying (Next.js may not preserve it)
+RUN mkdir -p public
+
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
@@ -52,7 +56,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files
+# Copy necessary files - public directory may be empty but must exist
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache
