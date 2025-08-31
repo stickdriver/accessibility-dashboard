@@ -137,7 +137,8 @@ export async function GET(_request: Request) {
       'http://localhost:3001', 
       'http://localhost:3002',
       'http://localhost:3003',
-      'https://auditable.dev'
+      'https://auditable.dev',
+      'https://www.auditable.dev'
     ];
     const origin = _request.headers.get('origin');
     if (origin && allowedOrigins.includes(origin)) {
@@ -212,7 +213,8 @@ export async function GET(_request: Request) {
       'http://localhost:3001', 
       'http://localhost:3002',
       'http://localhost:3003',
-      'https://auditable.dev'
+      'https://auditable.dev',
+      'https://www.auditable.dev'
     ];
     const origin = _request.headers.get('origin');
     if (origin && allowedOrigins.includes(origin)) {
@@ -236,7 +238,8 @@ export async function OPTIONS(request: Request) {
     'http://localhost:3001', 
     'http://localhost:3002',
     'http://localhost:3003',
-    'https://auditable.dev'
+    'https://auditable.dev',
+    'https://www.auditable.dev'
   ];
   const origin = request.headers.get('origin');
   if (origin && allowedOrigins.includes(origin)) {
