@@ -61,12 +61,12 @@ export async function GET(_request: Request) {
         scanLimitPeriod: "month",
         websites: 1,
         features: [
-          "10 pages scanned per month",
-          "1 website scan",
-          "WCAG 2.1 Level A & AA detection", 
-          "PDF export",
-          "Basic history",
-          "Email support"
+          "10 accessibility checks per month",
+          "Single-page scanning (no crawling)",
+          "Quick WCAG compliance spot-checks", 
+          "Instant accessibility insights",
+          "PDF violation reports",
+          "Basic email support"
         ],
         popular: false,
         stripeProductId: process.env.STRIPE_PRODUCT_ID_STARTER || null,
@@ -167,7 +167,7 @@ export async function GET(_request: Request) {
           scanLimit: 10,
           scanLimitPeriod: "month",
           websites: 1,
-          features: ["10 pages scanned per month", "Basic WCAG scanning", "PDF export"],
+          features: ["10 accessibility checks per month", "Quick WCAG spot-checks", "PDF reports"],
           popular: false,
           stripeProductId: null,
           stripePriceId: null
