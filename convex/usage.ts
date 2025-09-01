@@ -1,19 +1,44 @@
 import { query } from "./_generated/server";
+import { v } from "convex/values";
 // Temporarily disabled auth
 // import { getAuthUserId } from "@convex-dev/auth/server";
 
-export const getCurrentUsage = async (ctx: any, userId: string) => {
+export const getCurrentUsage = query({
+  args: { 
+    clerkUserId: v.string(),
+    monthYear: v.string()
+  },
+  handler: async (ctx: any, { clerkUserId, monthYear }: { clerkUserId: string, monthYear: string }) => {
+    const usage = await ctx.db
+      .query("usage")
+      .withIndex("by_user_month", (q: any) => 
+        q.eq("clerkUserId", clerkUserId).eq("monthYear", monthYear)
+      )
+      .first();
+
+    return usage || {
+      clerkUserId,
+      monthYear,
+      pagesScanned: 0,
+      scansPerformed: 0,
+      pdfDownloads: 0,
+      lastResetDate: Date.now(),
+    };
+  }
+});
+
+export const getCurrentUsageInternal = async (ctx: any, clerkUserId: string) => {
   const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
   
   const usage = await ctx.db
     .query("usage")
     .withIndex("by_user_month", (q: any) => 
-      q.eq("userId", userId).eq("monthYear", currentMonth)
+      q.eq("clerkUserId", clerkUserId).eq("monthYear", currentMonth)
     )
     .first();
 
   return usage || {
-    userId,
+    clerkUserId,
     monthYear: currentMonth,
     pagesScanned: 0,
     scansPerformed: 0,
@@ -24,7 +49,7 @@ export const getCurrentUsage = async (ctx: any, userId: string) => {
 
 export const incrementUsage = async (
   ctx: any, 
-  userId: string, 
+  clerkUserId: string, 
   field: "pagesScanned" | "scansPerformed" | "pdfDownloads", 
   amount: number = 1
 ) => {
@@ -33,7 +58,7 @@ export const incrementUsage = async (
   const existing = await ctx.db
     .query("usage")
     .withIndex("by_user_month", (q: any) => 
-      q.eq("userId", userId).eq("monthYear", currentMonth)
+      q.eq("clerkUserId", clerkUserId).eq("monthYear", currentMonth)
     )
     .first();
 
@@ -43,7 +68,7 @@ export const incrementUsage = async (
     });
   } else {
     await ctx.db.insert("usage", {
-      userId,
+      clerkUserId,
       monthYear: currentMonth,
       pagesScanned: field === "pagesScanned" ? amount : 0,
       scansPerformed: field === "scansPerformed" ? amount : 0,
@@ -58,7 +83,7 @@ export const getUserUsage = query({
     // Temporarily use demo user ID
     const userId = "demo-user-123";
 
-    const usage = await getCurrentUsage(ctx, userId);
+    const usage = await getCurrentUsageInternal(ctx, userId);
     
     // Define limits based on plan (temporarily unlimited for testing)
     const limits = {

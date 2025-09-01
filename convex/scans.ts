@@ -6,12 +6,12 @@ import { incrementUsage } from "./usage";
 
 export const startScan = mutation({
   args: { 
+    clerkUserId: v.string(),
     url: v.string(), 
-    scanType: v.union(v.literal("single_page"), v.literal("full_site"))
+    scanType: v.union(v.literal("single_page"), v.literal("full_site")),
+    options: v.optional(v.any())
   },
-  handler: async (ctx: any, { url, scanType }: { url: string, scanType: "single_page" | "full_site" }) => {
-    // Temporarily use demo user ID
-    const userId = "demo-user-123";
+  handler: async (ctx: any, { clerkUserId, url, scanType, options: _options = {} }: { clerkUserId: string, url: string, scanType: "single_page" | "full_site", options?: any }) => {
 
     // Validate URL format
     try {
@@ -30,7 +30,7 @@ export const startScan = mutation({
 
     // Create scan record
     const scanId = await ctx.db.insert("scans", {
-      userId,
+      clerkUserId,
       websiteUrl: url,
       scanType,
       status: "pending",
@@ -42,12 +42,12 @@ export const startScan = mutation({
     });
 
     // Update usage
-    await incrementUsage(ctx, userId, "scansPerformed", 1);
+    await incrementUsage(ctx, clerkUserId, "scansPerformed", 1);
 
     // Track analytics
     await ctx.db.insert("analytics", {
       eventType: "scan_started",
-      userId,
+      clerkUserId,
       metadata: { url, scanType, scanId },
       timestamp: Date.now(),
     });
@@ -60,20 +60,24 @@ export const startScan = mutation({
 });
 
 export const getUserScans = query({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx: any, { limit = 10 }: { limit?: number }) => {
-    // Temporarily use demo user ID
-    const userId = "demo-user-123";
-
+  args: { 
+    clerkUserId: v.string(),
+    limit: v.optional(v.number()),
+    offset: v.optional(v.number())
+  },
+  handler: async (ctx: any, { clerkUserId, limit = 10, offset = 0 }: { clerkUserId: string, limit?: number, offset?: number }) => {
     const scans = await ctx.db
       .query("scans")
-      .withIndex("by_user", (q: any) => q.eq("userId", userId))
+      .withIndex("by_user", (q: any) => q.eq("clerkUserId", clerkUserId))
       .order("desc")
-      .take(limit);
+      .take(limit + offset);
+
+    // Apply offset to results
+    const paginatedScans = scans.slice(offset);
 
     // For each scan, get associated pages to calculate severity stats
     const scansWithPages = await Promise.all(
-      scans.map(async (scan: any) => {
+      paginatedScans.map(async (scan: any) => {
         const pages = await ctx.db
           .query("scanPages")
           .withIndex("by_scan_order", (q: any) => q.eq("scanId", scan._id))
@@ -88,13 +92,13 @@ export const getUserScans = query({
 });
 
 export const getScanById = query({
-  args: { scanId: v.id("scans") },
-  handler: async (ctx: any, { scanId }: { scanId: any }) => {
-    // Temporarily use demo user ID
-    const userId = "demo-user-123";
-
+  args: { 
+    scanId: v.id("scans"),
+    clerkUserId: v.string()
+  },
+  handler: async (ctx: any, { scanId, clerkUserId }: { scanId: any, clerkUserId: string }) => {
     const scan = await ctx.db.get(scanId);
-    if (!scan || scan.userId !== userId) {
+    if (!scan || scan.clerkUserId !== clerkUserId) {
       return null;
     }
 

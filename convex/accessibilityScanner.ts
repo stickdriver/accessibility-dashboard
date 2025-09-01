@@ -22,24 +22,14 @@ export const scanWebsite = action({
     })),
     scanId: v.optional(v.string())
   },
-  handler: async (ctx: any, { url, scanType, options = {}, scanId }: {
+  handler: async (_ctx: any, { url, scanType, options = {}, scanId }: {
     url: string,
     scanType: "single_page" | "full_site",
     options?: any,
     scanId?: string
   }) => {
-    // Get scan details if scanId provided to determine user and tier
-    let clerkUserId, userTier;
-    if (scanId) {
-      const scan = await ctx.db.get(scanId);
-      if (scan) {
-        clerkUserId = scan.clerkUserId;
-        // Get user tier from Clerk or default to starter
-        userTier = 'starter'; // TODO: Get actual tier from user metadata
-      }
-    }
-    
-    return await callAccessibilityScannerService(url, scanType, options, scanId, clerkUserId, userTier);
+    // Call the scanner service
+    return await callAccessibilityScannerService(url, scanType, options, scanId);
   }
 });
 
@@ -47,9 +37,7 @@ async function callAccessibilityScannerService(
   url: string,
   scanType: "single_page" | "full_site",
   options: any = {},
-  scanId?: string,
-  clerkUserId?: string,
-  userTier?: string
+  scanId?: string
 ) {
   const startTime = Date.now();
   
@@ -59,24 +47,6 @@ async function callAccessibilityScannerService(
   } catch {
     throw new Error("Invalid URL format");
   }
-
-  // Map user tier to Scanner Service tier format
-  const customerTier = mapUserTierToScannerTier(userTier || 'starter');
-  
-  // Create Scanner Service request with Dashboard authentication
-  const scannerRequest = {
-    url,
-    customerTier,
-    subscriptionId: clerkUserId || 'dashboard-user',
-    options: {
-      timeout: options.timeout || 60000,
-      includeWarnings: true,
-      includeNotices: false,
-      wait: 1000,
-      ...options
-    },
-    customRunners: ['axe', 'pa11y'] // Use both engines for comprehensive results
-  };
 
   // V3 service endpoints
   // Full site scanning is handled by the same endpoint with maxPages option
@@ -309,17 +279,6 @@ function generateBasicRemediation(code: string): string {
   return tips[code] || 'Review accessibility guidelines for this issue.';
 }
 
-// Map user tier to Scanner Service tier format
-function mapUserTierToScannerTier(userTier: string): string {
-  const tierMapping: Record<string, string> = {
-    'starter': 'free',        // Pa11y + HtmlCodeSniffer (default runner)
-    'essential': 'premium',   // Pa11y + HtmlCodeSniffer + Axe runners  
-    'professional': 'enterprise', // Pa11y + all available runners
-    'enterprise': 'enterprise'     // Pa11y + all runners + enterprise features
-  };
-  
-  return tierMapping[userTier.toLowerCase()] || 'free';
-}
 
 // Extract hostname from URL for page title
 function extractHostname(url: string): string {
