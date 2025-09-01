@@ -3,7 +3,14 @@ import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../convex/_generated/api";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+// Initialize ConvexHttpClient with fallback for build time
+const getConvexClient = () => {
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!url) {
+    throw new Error("NEXT_PUBLIC_CONVEX_URL environment variable is not set");
+  }
+  return new ConvexHttpClient(url);
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,6 +25,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(url.searchParams.get("offset") || "0");
 
     // Get user's scans from Convex
+    const convex = getConvexClient();
     const scans = await convex.query(api.scans.getUserScans, { 
       clerkUserId: userId, 
       limit,
@@ -61,6 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Start scan in Convex
+    const convex = getConvexClient();
     const scanId = await convex.mutation(api.scans.startScan, {
       clerkUserId: userId,
       url: url.trim(),

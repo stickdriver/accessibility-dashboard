@@ -3,7 +3,14 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../../convex/_generated/api";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+// Initialize ConvexHttpClient with fallback for build time
+const getConvexClient = () => {
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!url) {
+    throw new Error("NEXT_PUBLIC_CONVEX_URL environment variable is not set");
+  }
+  return new ConvexHttpClient(url);
+};
 
 export async function GET(_request: NextRequest) {
   try {
@@ -19,6 +26,7 @@ export async function GET(_request: NextRequest) {
     const planType = user.publicMetadata?.planType || 'starter';
     
     // Get usage from Convex
+    const convex = getConvexClient();
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
     const usage = await convex.query(api.usage.getCurrentUsage, { 
       clerkUserId: userId,
