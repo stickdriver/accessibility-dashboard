@@ -508,6 +508,73 @@ const theme = {
 
 ## Deployment & Infrastructure
 
+### Production Deployment (Fly.io)
+
+The application is deployed to Fly.io with automatic scaling and health checks. 
+
+#### Fly.io Configuration (fly.toml)
+```toml
+app = 'accessibility-dashboard'
+primary_region = 'lax'
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
+```
+
+#### Environment Variables Setup
+
+**Required Environment Variables:**
+```bash
+# Core Services
+NEXT_PUBLIC_CONVEX_URL=https://your-convex-deployment.convex.cloud
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_publishable_key
+CLERK_SECRET_KEY=sk_test_your_secret_key
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+
+# Production Configuration
+NEXT_PUBLIC_APP_URL=https://accessibility-dashboard.fly.dev
+NODE_ENV=production
+LOG_LEVEL=info
+```
+
+Use the provided script to set environment variables:
+```bash
+./scripts/set-fly-env.sh
+```
+
+#### Deployment Commands
+```bash
+# Deploy to production
+flyctl deploy
+
+# Check deployment status
+flyctl status -a accessibility-dashboard
+
+# View logs
+flyctl logs -a accessibility-dashboard
+
+# Set environment variables
+flyctl secrets set KEY=value
+```
+
 ### Docker Configuration
 
 ```dockerfile
@@ -542,10 +609,34 @@ ENV PORT 3000
 CMD ["node", "server.js"]
 ```
 
-### Environment-based Deployment
+### Build & Deployment Process
 
+#### Pre-deployment Checklist
+1. **TypeScript Compilation**: Ensure no unused variables or type errors
+2. **Environment Variables**: Set all required variables in production
+3. **API Imports**: Use correct relative paths for Convex API imports
+4. **Authentication**: Properly await auth() calls in API routes
+
+#### Common Build Issues & Fixes
+
+**TypeScript Errors:**
+- Remove unused variables or prefix with underscore (_variable)
+- Ensure all function parameters are used or marked as unused
+- Fix async/await syntax in API route handlers
+
+**Environment Variable Errors:**
+- Set NEXT_PUBLIC_CONVEX_URL in production environment
+- Configure Clerk authentication keys
+- Verify all required environment variables are present
+
+**Import Path Issues:**
+- Use relative paths for Convex API imports: `../../../../convex/_generated/api`
+- Ensure proper Next.js app directory structure
+
+### Alternative Deployment Options
+
+#### Docker Compose (Local/Self-hosted)
 ```yaml
-# docker-compose.yml
 version: '3.8'
 services:
   dashboard:
@@ -554,10 +645,8 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - SCANNER_SERVICE_URL=http://scanner-service:3001
-      - JWT_SECRET=${JWT_SECRET}
-    depends_on:
-      - scanner-service
+      - NEXT_PUBLIC_CONVEX_URL=${CONVEX_URL}
+      - CLERK_SECRET_KEY=${CLERK_SECRET}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s

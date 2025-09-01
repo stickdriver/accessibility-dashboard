@@ -242,7 +242,66 @@ npm run e2e:ui  # Interactive mode
 
 ## 🚢 Deployment
 
-### Docker Deployment
+### Production Deployment (Fly.io)
+
+The application is deployed to Fly.io with automatic scaling and health checks.
+
+**Live URL**: https://accessibility-dashboard.fly.dev
+
+#### Quick Deploy
+
+1. **Set up environment variables**
+   ```bash
+   # Edit with your actual values first
+   ./scripts/set-fly-env.sh
+   ```
+
+2. **Deploy to Fly.io**
+   ```bash
+   flyctl deploy
+   ```
+
+3. **Check deployment status**
+   ```bash
+   flyctl status -a accessibility-dashboard
+   flyctl logs -a accessibility-dashboard
+   ```
+
+#### Required Environment Variables
+
+```bash
+# Core Services
+NEXT_PUBLIC_CONVEX_URL=https://your-convex-deployment.convex.cloud
+
+# Clerk Authentication  
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_your_publishable_key
+CLERK_SECRET_KEY=sk_live_your_secret_key
+
+# Production URLs
+NEXT_PUBLIC_APP_URL=https://accessibility-dashboard.fly.dev
+NODE_ENV=production
+```
+
+#### Build Requirements
+
+Ensure your code passes these checks before deployment:
+
+```bash
+# TypeScript compilation
+npm run build
+
+# Code quality checks
+npm run lint
+npm run type-check
+```
+
+**Common Build Issues:**
+- Remove unused variables or prefix with underscore (`_variable`)
+- Properly await `auth()` calls in API routes  
+- Use relative paths for Convex API imports
+- Set all required environment variables in production
+
+### Docker Deployment (Alternative)
 
 1. **Build image**
    ```bash
@@ -252,26 +311,28 @@ npm run e2e:ui  # Interactive mode
 2. **Run container**
    ```bash
    docker run -p 3000:3000 \
-     -e SCANNER_SERVICE_URL=http://scanner-service:3001 \
-     -e JWT_SECRET=your-secret \
+     -e NEXT_PUBLIC_CONVEX_URL=https://your-convex.convex.cloud \
+     -e CLERK_SECRET_KEY=your-clerk-secret \
      accessibility-dashboard
    ```
 
-### Docker Compose
+### Docker Compose (Self-hosted)
 
 ```bash
-docker-compose up -d
+# Production deployment
+docker-compose -f docker-compose.production.yml up -d
 ```
 
 ### Production Checklist
 
-- [ ] Set production environment variables
-- [ ] Configure JWT secret
-- [ ] Set up monitoring (Sentry)
-- [ ] Configure reverse proxy (nginx)
-- [ ] Enable HTTPS
-- [ ] Set up log aggregation
-- [ ] Configure backup strategy
+- [x] **Environment Variables**: Set in production environment
+- [x] **Authentication**: Clerk production keys configured  
+- [x] **Database**: Convex production deployment
+- [x] **HTTPS**: Enabled with automatic SSL certificates
+- [x] **Health Checks**: `/api/health` endpoint monitoring
+- [x] **Logging**: Structured JSON logging enabled
+- [ ] **Monitoring**: Set up error tracking (Sentry)
+- [ ] **Backup Strategy**: Database backup configuration
 
 ## 🔒 Security
 
@@ -354,8 +415,9 @@ docker-compose up -d
 ## 📚 Documentation
 
 - **[CLAUDE.md](./CLAUDE.md)**: Complete technical specification
-- **[API.md](./docs/API.md)**: API integration guide
-- **[DEPLOYMENT.md](./docs/DEPLOYMENT.md)**: Deployment instructions
+- **[API.md](./docs/API.md)**: API integration guide  
+- **[DEPLOYMENT.md](./docs/DEPLOYMENT.md)**: Production deployment guide
+- **[TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md)**: Common issues and solutions
 - **[SECURITY.md](./docs/SECURITY.md)**: Security guidelines
 
 ## 📄 License
