@@ -248,41 +248,29 @@ async function performProductionScanWithProgress(
       status: "running"
     });
 
-    // Try sync first for fast results, fall back to async for complex/slow sites
-    let results;
-    try {
-      // Attempt sync scan with shorter timeout
-      console.log(`Attempting sync scan for ${url}`);
-      
-      results = await ctx.runAction("accessibilityScanner:scanWebsite", {
-        url,
-        scanType: scanType as "single_page" | "full_site",
-        options: {
-          timeout: 60000, // 60 seconds for sync attempt
-          maxPages: scanType === "full_site" ? 5 : 1,
-          retryAttempts: 1
-        },
-        scanId: scanId
-      });
-      
-      console.log(`Sync scan successful for ${url}`);
-      
-    } catch (syncError) {
-      console.log(`Sync scan failed for ${url}, falling back to async:`, (syncError as Error).message);
-      
-      // Update status to indicate fallback to async
-      await ctx.runMutation("scanProcessor:updateScanStatus", {
-        scanId,
-        progress: 15,
-        message: "Complex page detected, using queue-based scanning...",
-        status: "running"
-      });
-      
-      // Fall back to async scanning
-      results = await performAsyncScanWithPolling(ctx, scanId, url, scanType);
-      
-      console.log(`Async scan successful for ${url}`);
-    }
+    // Async-only scanning for optimal resource utilization and predictable performance
+    console.log(`Starting async scan for ${url} (async-only architecture)`);
+    
+    // Update status to show immediate async processing
+    await ctx.runMutation("scanProcessor:updateScanStatus", {
+      scanId,
+      progress: 15,
+      message: "Submitting scan to priority queue...",
+      status: "running"
+    });
+    
+    // All scans go through async queue system for better resource management
+    const results = await performAsyncScanWithPolling(ctx, scanId, url, scanType);
+    
+    console.log(`Async scan completed for ${url}`);
+    
+    // Additional progress update after async completion
+    await ctx.runMutation("scanProcessor:updateScanStatus", {
+      scanId,
+      progress: 90,
+      message: "Scan completed, processing results...",
+      status: "running"
+    });
 
     // Only update after scan completes (webhook handles progress during scan)
     await ctx.runMutation("scanProcessor:updateScanStatus", {
