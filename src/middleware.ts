@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-export function middleware(request: NextRequest) {
-  // Handle CORS preflight requests
+// Create route matcher for public routes (no auth required)
+const isPublicRoute = createRouteMatcher([
+  '/api/health',
+  '/api/tiers',
+  '/api/webhooks/(.*)',
+]);
+
+export default clerkMiddleware((auth, request) => {
+  // Handle CORS preflight requests first
   if (request.method === 'OPTIONS') {
     const response = new NextResponse(null, { status: 200 });
     
@@ -14,6 +22,11 @@ export function middleware(request: NextRequest) {
     response.headers.set('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
     
     return response;
+  }
+
+  // Protect private routes
+  if (!isPublicRoute(request)) {
+    auth().protect();
   }
 
   // For non-OPTIONS requests, add CORS headers to the response
@@ -28,11 +41,14 @@ export function middleware(request: NextRequest) {
   }
 
   return response;
-}
+});
 
 // Configure which routes this middleware runs on
 export const config = {
   matcher: [
-    '/api/:path*', // Match all API routes
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
   ],
 };
