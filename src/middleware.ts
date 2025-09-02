@@ -1,12 +1,5 @@
 import { NextResponse } from 'next/server';
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-
-// Create route matcher for public routes (no auth required)
-const isPublicRoute = createRouteMatcher([
-  '/api/health',
-  '/api/tiers',
-  '/api/webhooks/(.*)',
-]);
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
 export default clerkMiddleware((auth, request) => {
   // Handle CORS preflight requests first
@@ -21,11 +14,6 @@ export default clerkMiddleware((auth, request) => {
     response.headers.set('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
     
     return response;
-  }
-
-  // Protect private routes
-  if (!isPublicRoute(request)) {
-    auth().protect();
   }
 
   // For non-OPTIONS requests, add CORS headers to the response
