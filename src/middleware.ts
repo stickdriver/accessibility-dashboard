@@ -2,12 +2,24 @@ import { NextResponse } from 'next/server';
 import { clerkMiddleware } from '@clerk/nextjs/server';
 
 export default clerkMiddleware((_auth, request) => {
+  // Determine allowed origins
+  const origin = request.headers.get('origin');
+  const allowedOrigins = [
+    'https://www.auditable.dev',
+    'https://auditable.dev',
+    'http://localhost:3000',
+    'http://localhost:3002'
+  ];
+  
+  const isAllowedOrigin = origin && allowedOrigins.includes(origin);
+  const corsOrigin = isAllowedOrigin ? origin : 'https://www.auditable.dev';
+
   // Handle CORS preflight requests first
   if (request.method === 'OPTIONS') {
     const response = new NextResponse(null, { status: 200 });
     
     // Set CORS headers
-    response.headers.set('Access-Control-Allow-Origin', 'https://www.auditable.dev');
+    response.headers.set('Access-Control-Allow-Origin', corsOrigin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Scanner-API-Key');
     response.headers.set('Access-Control-Allow-Credentials', 'true');
@@ -21,7 +33,7 @@ export default clerkMiddleware((_auth, request) => {
   
   // Only add CORS headers for API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    response.headers.set('Access-Control-Allow-Origin', 'https://www.auditable.dev');
+    response.headers.set('Access-Control-Allow-Origin', corsOrigin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Scanner-API-Key');
     response.headers.set('Access-Control-Allow-Credentials', 'true');
