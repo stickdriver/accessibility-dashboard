@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clerkMiddleware } from '@clerk/nextjs/server';
 
-export default clerkMiddleware((auth, request) => {
+export default clerkMiddleware((_auth, request) => {
   // Handle CORS preflight requests first
   if (request.method === 'OPTIONS') {
     const response = new NextResponse(null, { status: 200 });
