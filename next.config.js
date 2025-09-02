@@ -68,6 +68,23 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'no-store, must-revalidate'
+          },
+          // CORS headers for Frontend access
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: 'https://www.auditable.dev'
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS'
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization, X-Scanner-API-Key'
+          },
+          {
+            key: 'Access-Control-Allow-Credentials',
+            value: 'true'
           }
         ]
       }

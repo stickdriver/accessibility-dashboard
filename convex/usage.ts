@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 // Temporarily disabled auth
 // import { getAuthUserId } from "@convex-dev/auth/server";
@@ -77,6 +77,42 @@ export const incrementUsage = async (
     });
   }
 };
+
+// Update usage from Scanner Service
+export const updateUsage = mutation({
+  args: {
+    clerkUserId: v.string(),
+    scanType: v.string(),
+    pagesScanned: v.number(),
+    timestamp: v.optional(v.string()),
+  },
+  handler: async (ctx: any, { clerkUserId, pagesScanned }: {
+    clerkUserId: string,
+    scanType: string,
+    pagesScanned: number,
+    timestamp?: string
+  }) => {
+    // Update scans performed
+    await incrementUsage(ctx, clerkUserId, "scansPerformed", 1);
+    
+    // Update pages scanned
+    await incrementUsage(ctx, clerkUserId, "pagesScanned", pagesScanned);
+    
+    // Get current usage to return remaining count
+    const usage = await getCurrentUsageInternal(ctx, clerkUserId);
+    
+    // TODO: Get actual limits from user subscription
+    // For now, using static limits based on tier
+    const limits = {
+      pagesScanned: 1000,
+      scansPerformed: 100,
+    };
+    
+    return {
+      remaining: Math.max(0, limits.scansPerformed - usage.scansPerformed),
+    };
+  },
+});
 
 export const getUserUsage = query({
   handler: async (ctx: any) => {

@@ -61,27 +61,24 @@ accessibility-dashboard/
 
 ## Tier System Integration
 
-The dashboard integrates with the accessibility scanner's four-tier subscription system:
+The dashboard integrates with the accessibility scanner's three-tier subscription system:
 
 ### Subscription Tiers
-- **Free Tier**: 1 page max, axe runner only, WCAG2A, 100 requests/month, 5 RPM
-- **Basic Tier**: 5 pages max, axe runner only, WCAG2AA, 1,000 requests/month, 10 RPM  
-- **Premium Tier**: 25 pages max, axe + htmlcs runners, WCAG2AA, 10,000 requests/month, 50 RPM
-- **Enterprise Tier**: 100 pages max, all runners + custom, WCAG2AAA, unlimited requests, 200 RPM
+- **Starter ($0/month)**: 1 page max, axe runner only, WCAG2A, 100 requests/month, 5 RPM
+- **Essential ($49/month)**: 25 pages max, axe + htmlcs runners, WCAG2AA, 10,000 requests/month, 50 RPM
+- **Professional ($149/month)**: 100 pages max, all runners + custom, WCAG2AAA, unlimited requests, 200 RPM
 
 ### Dashboard Tier Analytics
 ```typescript
 interface TierMetrics {
   distribution: {
-    free: number;
-    basic: number;
-    premium: number;
-    enterprise: number;
+    starter: number;
+    essential: number;
+    professional: number;
   };
   conversionRates: {
-    freeToBasic: number;
-    basicToPremium: number;
-    premiumToEnterprise: number;
+    starterToEssential: number;
+    essentialToProfessional: number;
   };
   usageByTier: {
     [tier: string]: {
@@ -136,10 +133,10 @@ interface DashboardMetrics {
 
 **Features**:
 - **Queue Overview**: Pending, running, completed, failed job counts
-- **Job Search**: Filter by status, tier (free/basic/premium/enterprise), date range, user ID
+- **Job Search**: Filter by status, tier (starter/essential/professional), date range, user ID
 - **Job Actions**: Retry failed jobs, cancel pending jobs, view details
 - **Queue Controls**: Pause/resume queue, adjust worker count
-- **Priority Queue**: Jobs prioritized by tier (Enterprise=100, Premium=50, Basic=10, Free=1)
+- **Priority Queue**: Jobs prioritized by tier (Professional=100, Essential=50, Starter=10)
 
 **Security Requirements**:
 - Only admin users can perform queue operations
@@ -155,7 +152,7 @@ interface DashboardMetrics {
 interface JobDetail {
   id: string;
   status: JobStatus;
-  tier: 'free' | 'basic' | 'premium' | 'enterprise';
+  tier: 'starter' | 'essential' | 'professional';
   url: string;
   submittedAt: string;
   startedAt?: string;
@@ -174,7 +171,7 @@ interface JobDetail {
 ```
 
 **Analytics Dashboard**:
-- Job completion trends by tier (free, basic, premium, enterprise)
+- Job completion trends by tier (starter, essential, professional)
 - Geographic distribution of scans
 - Popular domains and URL patterns
 - Error categorization and frequency
@@ -186,9 +183,9 @@ interface JobDetail {
 
 **Key Metrics**:
 - **Customer Analytics**: 
-  - Tier distribution breakdown (free vs. paid users)
-  - Free trial to paid conversion rates
-  - Upgrade path analysis (free→basic→premium→enterprise)
+  - Tier distribution breakdown (starter vs. paid users)
+  - Free tier to paid conversion rates
+  - Upgrade path analysis (starter→essential→professional)
   - Churn analysis by tier
 - **Revenue Tracking**: Subscription trends, upgrade patterns
 - **Usage Analytics**: API consumption, quota utilization
@@ -763,8 +760,8 @@ export async function GET() {
 ### Business KPIs
 - **Admin Efficiency**: 50% faster incident resolution
 - **User Satisfaction**: NPS > 8 from admin users
-- **Free Tier Conversion**: 15% free to paid conversion rate
-- **Tier Progression**: 25% basic→premium, 15% premium→enterprise conversion
+- **Free Tier Conversion**: 15% starter to paid conversion rate
+- **Tier Progression**: 25% starter→essential, 15% essential→professional conversion
 - **Revenue Growth**: 40% increase within 6 months via tier upgrades
 - **System Reliability**: 99.5% queue processing success
 - **Operational Insight**: 100% visibility into system performance

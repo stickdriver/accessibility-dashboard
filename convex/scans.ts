@@ -131,6 +131,62 @@ export const updateScanProgress = mutation({
 
 export const completeScan = mutation({
   args: {
+    clerkUserId: v.string(),
+    url: v.string(),
+    scanType: v.union(v.literal("single_page"), v.literal("full_site")),
+    result: v.object({
+      violationCount: v.number(),
+      violations: v.optional(v.any()),
+      timestamp: v.optional(v.string()),
+      scanDuration: v.optional(v.number()),
+      enginesUsed: v.optional(v.array(v.string())),
+      tierInfo: v.optional(v.any()),
+      engineStatistics: v.optional(v.any()),
+    }),
+    jobId: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+  },
+  handler: async (ctx: any, args: any) => {
+    // Create scan record with completed status
+    const scanId = await ctx.db.insert("scans", {
+      clerkUserId: args.clerkUserId,
+      websiteUrl: args.url,
+      scanType: args.scanType,
+      status: "completed",
+      progress: 100,
+      pagesScanned: args.scanType === "full_site" ? args.result.pagesScanned || 1 : 1,
+      totalIssues: args.result.violationCount,
+      criticalIssues: args.result.violations?.filter((v: any) => v.severity === "critical").length || 0,
+      results: args.result,
+      scanDuration: args.result.scanDuration || 0,
+      completedAt: Date.now(),
+      jobId: args.jobId,
+      metadata: args.metadata,
+    });
+
+    // Track completion analytics
+    await ctx.db.insert("analytics", {
+      eventType: "scan_completed",
+      clerkUserId: args.clerkUserId,
+      metadata: {
+        scanId: scanId,
+        url: args.url,
+        scanType: args.scanType,
+        totalIssues: args.result.violationCount,
+        duration: args.result.scanDuration || 0,
+        enginesUsed: args.result.enginesUsed,
+        jobId: args.jobId,
+      },
+      timestamp: Date.now(),
+    });
+
+    return scanId;
+  },
+});
+
+// Legacy completeScan method for backward compatibility
+export const completeScanLegacy = mutation({
+  args: {
     scanId: v.id("scans"),
     results: v.any(),
     totalIssues: v.number(),
