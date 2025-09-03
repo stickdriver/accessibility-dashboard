@@ -18,6 +18,46 @@ const getConvexClient = () => {
   return new ConvexHttpClient(url);
 };
 
+// URL reachability validation with graceful degradation
+async function validateURLReachability(url: string): Promise<void> {
+  try {
+    // Step 1: Try HEAD request (lightweight)
+    const headResponse = await fetch(url, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+      headers: {
+        'User-Agent': 'AccessAudit-Scanner/3.0 (+https://auditable.dev)',
+      },
+    });
+    
+    if (headResponse.ok) {
+      return; // URL is reachable
+    }
+  } catch (headError) {
+    // Step 2: HEAD failed, try GET with minimal data
+    try {
+      const getResponse = await fetch(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(8000), // 8 second timeout for GET
+        headers: {
+          'User-Agent': 'AccessAudit-Scanner/3.0 (+https://auditable.dev)',
+          'Range': 'bytes=0-1023', // Request only first 1KB
+        },
+      });
+      
+      if (getResponse.ok || getResponse.status === 206) {
+        return; // URL is reachable
+      }
+    } catch (getError) {
+      // Both HEAD and GET failed - log for debugging but don't block the scan
+      console.log(`URL validation failed for ${url}:`, getError);
+      // Graceful degradation: let Pa11y handle it
+    }
+  }
+  
+  // Don't throw errors - let the scan proceed and Pa11y will handle unreachable URLs
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -73,6 +113,9 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json({ error: "Invalid URL format" }, { status: 400 });
     }
+
+    // Quick URL reachability check (graceful degradation - no user-facing errors)
+    await validateURLReachability(url.trim());
 
     // Get the user's JWT token from the Authorization header
     const authHeader = request.headers.get("Authorization");
