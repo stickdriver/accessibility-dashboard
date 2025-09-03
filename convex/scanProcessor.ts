@@ -320,8 +320,8 @@ async function performAsyncScanWithPolling(
   url: string,
   scanType: string
 ) {
-  // For now, use free tier - in production, this would come from user's plan
-  const customerTier = "free"; // TODO: Get from user's actual plan
+  // For now, use starter tier - in production, this would come from user's plan
+  const customerTier = "starter"; // TODO: Get from user's actual plan
   
   // Submit async job with V3 service integration
   const jobSubmission = await ctx.runAction("asyncAccessibilityScanner:scanWebsiteAsync", {

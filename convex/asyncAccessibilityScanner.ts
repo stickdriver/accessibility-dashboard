@@ -9,7 +9,7 @@ export const scanWebsiteAsync = action({
   args: {
     url: v.string(),
     scanType: v.union(v.literal("single_page"), v.literal("full_site")),
-    customerTier: v.optional(v.union(v.literal("free"), v.literal("basic"), v.literal("premium"), v.literal("enterprise"))),
+    customerTier: v.optional(v.union(v.literal("starter"), v.literal("essential"), v.literal("professional"))),
     options: v.optional(v.object({
       timeout: v.optional(v.number()),
       maxPages: v.optional(v.number()),
@@ -23,10 +23,10 @@ export const scanWebsiteAsync = action({
     })),
     scanId: v.optional(v.string())
   },
-  handler: async (_ctx: any, { url, scanType, customerTier = "free", options = {}, scanId }: {
+  handler: async (_ctx: any, { url, scanType, customerTier = "starter", options = {}, scanId }: {
     url: string,
     scanType: "single_page" | "full_site",
-    customerTier?: "free" | "basic" | "premium" | "enterprise",
+    customerTier?: "starter" | "essential" | "professional",
     options?: any,
     scanId?: string
   }) => {
@@ -89,7 +89,7 @@ export const cancelJob = action({
 async function submitAsyncScan(
   url: string,
   scanType: "single_page" | "full_site",
-  customerTier: string = "free",
+  customerTier: string = "starter",
   options: any = {},
   scanId?: string
 ) {
@@ -105,7 +105,7 @@ async function submitAsyncScan(
   // V3 async endpoint
   const endpoint = `${SCANNER_SERVICE_URL}/api/v2/async/scan/single`;
 
-  // V3 service supports separate free and basic tiers
+  // V3 service supports separate starter, essential, and professional tiers
   const requestBody = {
     url,
     customerTier: customerTier,
@@ -132,6 +132,7 @@ async function submitAsyncScan(
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'AccessAudit-Convex/2.0',
+        'Authorization': `Bearer ${process.env.SCANNER_API_KEY || ''}`,
       },
       body: JSON.stringify(requestBody),
       // V3 service returns immediately with job ID, so short timeout is fine
@@ -180,7 +181,7 @@ async function submitAsyncScan(
       status: result.status || 'queued',
       submittedAt: result.submittedAt,
       estimatedCompletionTime: result.estimatedCompletionTime,
-      tier: result.tier || 'basic',
+      tier: result.tier || 'starter',
       message: result.message || 'Job submitted successfully'
     };
 
@@ -282,6 +283,7 @@ async function fetchJobStatus(jobId: string) {
       method: 'GET',
       headers: {
         'User-Agent': 'AccessAudit-Convex/2.0',
+        'Authorization': `Bearer ${process.env.SCANNER_API_KEY || ''}`,
       },
       signal: AbortSignal.timeout(15000) // 15 seconds
     });
@@ -324,6 +326,7 @@ async function fetchJobProgress(jobId: string) {
       method: 'GET',
       headers: {
         'User-Agent': 'AccessAudit-Convex/2.0',
+        'Authorization': `Bearer ${process.env.SCANNER_API_KEY || ''}`,
       },
       signal: AbortSignal.timeout(15000) // 15 seconds
     });
@@ -377,6 +380,7 @@ async function cancelAsyncJob(jobId: string) {
       method: 'DELETE',
       headers: {
         'User-Agent': 'AccessAudit-Convex/2.0',
+        'Authorization': `Bearer ${process.env.SCANNER_API_KEY || ''}`,
       },
       signal: AbortSignal.timeout(10000) // 10 seconds
     });
