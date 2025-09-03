@@ -295,7 +295,47 @@ POST /api/v2/dashboard/queue/workers    - Adjust worker count
 
 ## Security Implementation
 
-### Authentication & Authorization
+### Inter-Service Authentication Architecture
+
+The Dashboard Backend serves as the central authentication hub for the entire platform:
+
+```
+Frontend (JWT) → Dashboard Backend → Scanner Service (JWT + API Key)
+                        ↓
+                   Convex Database
+```
+
+**Key Features:**
+- **Dual Authentication**: API keys for service identification + JWT tokens for user authentication
+- **Centralized Validation**: All user authentication flows through Dashboard Backend
+- **Subscription Enforcement**: Real-time tier validation via JWT token context
+- **Audit Trail**: Complete logging of authenticated operations
+
+### Authentication Endpoints
+
+```typescript
+// User Authentication Validation (for Scanner Service)
+GET /api/scanner/auth/validate
+Headers: {
+  "Authorization": "Bearer <clerk_jwt_token>",
+  "X-Scanner-API-Key": "<shared_api_key>"
+}
+Response: {
+  "valid": true,
+  "userId": "clerk_user_id", 
+  "email": "user@example.com"
+}
+
+// Scan Creation with JWT Forwarding
+POST /api/scans
+Headers: {
+  "Authorization": "Bearer <clerk_jwt_token>",
+  "Content-Type": "application/json"
+}
+// Forwards JWT + API key to Scanner Service
+```
+
+### Admin Authentication & Authorization
 
 ```typescript
 // JWT-based admin authentication

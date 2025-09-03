@@ -21,7 +21,6 @@ export default defineSchema({
     pagesScanned: v.number(),
     totalIssues: v.number(),
     criticalIssues: v.number(),
-    accessibilityScore: v.optional(v.number()), // 0-100
     results: v.any(), // JSON scan results
     errorMessage: v.optional(v.string()),
     scanDuration: v.optional(v.number()), // seconds
@@ -36,7 +35,6 @@ export default defineSchema({
     pageTitle: v.optional(v.string()),
     issues: v.any(), // Array of accessibility issues
     wcagLevel: v.string(), // "A", "AA", "AAA"
-    accessibilityScore: v.number(),
     loadTime: v.optional(v.number()),
     scanOrder: v.number(), // Order in which page was scanned
   }).index("by_scan", ["scanId"])

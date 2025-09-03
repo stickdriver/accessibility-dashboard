@@ -60,4 +60,4 @@ next-env.d.ts
 .bundle-analyzer/
 
 # Local development
-.local
+.localdeploy.sh

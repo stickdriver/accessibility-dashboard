@@ -4,10 +4,27 @@ import { api } from "../../../../../../convex/_generated/api";
 
 // Initialize ConvexHttpClient with fallback for build time
 const getConvexClient = () => {
-  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  let url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  
+  // Fallback to CONVEX_DEPLOYMENT if NEXT_PUBLIC_CONVEX_URL is not available
+  if (!url && process.env.CONVEX_DEPLOYMENT) {
+    url = `https://${process.env.CONVEX_DEPLOYMENT}.convex.cloud`;
+    console.log("Using CONVEX_DEPLOYMENT fallback:", url);
+  }
+  
+  console.log("Environment variables check:", {
+    hasNextPublicConvexUrl: !!process.env.NEXT_PUBLIC_CONVEX_URL,
+    hasConvexDeployment: !!process.env.CONVEX_DEPLOYMENT,
+    constructedUrl: url,
+    nodeEnv: process.env.NODE_ENV,
+  });
+  
   if (!url) {
+    console.error("Neither NEXT_PUBLIC_CONVEX_URL nor CONVEX_DEPLOYMENT found. Available env vars:", Object.keys(process.env).filter(key => key.includes('CONVEX')));
     throw new Error("NEXT_PUBLIC_CONVEX_URL environment variable is not set");
   }
+  
+  console.log("Using Convex URL:", url);
   return new ConvexHttpClient(url);
 };
 
@@ -34,7 +51,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error("Failed to parse JSON body:", jsonError);
+      return NextResponse.json(
+        { success: false, error: "Invalid JSON in request body" },
+        { status: 400 }
+      );
+    }
+
     const { userId, scanResult, scanType, jobId } = body;
 
     if (!userId || !scanResult) {
@@ -46,8 +73,22 @@ export async function POST(request: NextRequest) {
 
     // Validate scan result structure
     if (!scanResult.url || typeof scanResult.violationCount !== "number") {
+      console.error("Invalid scan result structure:", {
+        hasUrl: !!scanResult.url,
+        violationCountType: typeof scanResult.violationCount,
+        violationCountValue: scanResult.violationCount
+      });
       return NextResponse.json(
         { success: false, error: "Invalid scan result format" },
+        { status: 400 }
+      );
+    }
+
+    // Validate violations array structure
+    if (scanResult.violations && !Array.isArray(scanResult.violations)) {
+      console.error("Violations is not an array:", typeof scanResult.violations);
+      return NextResponse.json(
+        { success: false, error: "Invalid violations format - must be array" },
         { status: 400 }
       );
     }
@@ -55,20 +96,59 @@ export async function POST(request: NextRequest) {
     try {
       const convex = getConvexClient();
 
-      // Store the scan result in Convex
-      const scanId = await convex.mutation(api.scans.completeScan, {
+      // Log the incoming scan result for debugging
+      console.log("Received scan result:", JSON.stringify(scanResult, null, 2));
+
+      // Parse scanDuration if it's a string (Go duration format) or convert from nanoseconds
+      let scanDurationMs = 0;
+      if (scanResult.scanDuration) {
+        if (typeof scanResult.scanDuration === "string") {
+          // Parse Go duration format (e.g., "29.133275152s")
+          const match = scanResult.scanDuration.match(/^([\d.]+)([a-z]+)$/);
+          if (match) {
+            const value = parseFloat(match[1]);
+            const unit = match[2];
+            if (unit === "s") {
+              scanDurationMs = value * 1000;
+            } else if (unit === "ms") {
+              scanDurationMs = value;
+            } else if (unit === "m") {
+              scanDurationMs = value * 60 * 1000;
+            }
+          }
+        } else if (typeof scanResult.scanDuration === "number") {
+          // Scanner Service sends nanoseconds, convert to milliseconds
+          scanDurationMs = scanResult.scanDuration / 1000000;
+        }
+      }
+
+      // Process and clean violations data (remove problematic fields but keep all violations)
+      const cleanedViolations = scanResult.violations ? 
+        scanResult.violations.map((violation: any) => ({
+          code: violation.code || "",
+          type: violation.type || "error", 
+          message: violation.message || "", 
+          selector: violation.selector || "",
+          runner: violation.runner || "unknown"
+          // Remove context, detectedBy, engineSpecific which can contain circular references
+        })) : [];
+      
+      // Log the data being sent to Convex for debugging
+      const convexData = {
         clerkUserId: userId,
         url: scanResult.url,
         scanType: scanType || "single_page",
         result: {
           violationCount: scanResult.violationCount,
-          violations: scanResult.violations || [],
+          violations: cleanedViolations,
           timestamp: scanResult.timestamp || new Date().toISOString(),
-          scanDuration: scanResult.scanDuration || 0,
+          scanDuration: scanDurationMs,
           enginesUsed: scanResult.enginesUsed || ["axe"],
-          // Include additional metadata from scanner
-          tierInfo: scanResult.tierInfo || {},
-          engineStatistics: scanResult.engineStatistics || {},
+          // Remove potentially problematic fields to test
+          // violationsTruncated: scanResult.violations ? scanResult.violations.length > maxViolations : false,
+          // originalViolationCount: scanResult.violations ? scanResult.violations.length : 0,
+          // tierInfo: scanResult.tierInfo || {},
+          // engineStatistics: scanResult.engineStatistics || {},
         },
         jobId: jobId,
         metadata: {
@@ -76,7 +156,64 @@ export async function POST(request: NextRequest) {
           scannerVersion: "v3",
           reportedBy: "scanner-service",
         },
+      };
+      
+      console.log("Storing scan with:", {
+        clerkUserId: userId,
+        url: scanResult.url,
+        violationCount: scanResult.violationCount,
+        violationsLength: cleanedViolations.length,
+        originalViolationsLength: scanResult.violations?.length || 0,
+        scanDurationMs: scanDurationMs,
+        jobId: jobId,
+        isUUID: jobId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId),
+        willTryUpdate: jobId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId),
       });
+
+      // Debug: Log the complete data being sent to Convex (truncated for safety)
+      console.log("Complete Convex data structure:", JSON.stringify({
+        ...convexData,
+        result: {
+          ...convexData.result,
+          violations: convexData.result.violations.slice(0, 2) // Only log first 2 violations
+        }
+      }, null, 2));
+
+      // Store the scan result in Convex - update existing scan if jobId matches a scanId
+      let scanId;
+      try {
+        // Check if jobId is NOT a UUID (UUIDs have format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+        // If it's not a UUID, it's likely a Convex ID that we should try to update
+        const isUUID = jobId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId);
+        const shouldTryUpdate = jobId && !isUUID;
+        
+        if (shouldTryUpdate) {
+          // If jobId is not a UUID, assume it's a Convex ID and try to update existing scan
+          try {
+            await convex.mutation(api.scans.completeScanLegacy, {
+              scanId: jobId,
+              results: convexData.result,
+              totalIssues: convexData.result.violationCount,
+              criticalIssues: cleanedViolations.filter((v: any) => v.type === "error").length,
+              scanDuration: scanDurationMs
+            });
+            scanId = jobId; // Use existing scanId
+            console.log("Successfully updated existing scan with ID:", scanId);
+          } catch (updateError) {
+            console.error("Failed to update existing scan, creating new one:", updateError);
+            // Fall back to creating new scan
+            scanId = await convex.mutation(api.scans.completeScan, convexData);
+            console.log("Successfully created new scan with ID:", scanId);
+          }
+        } else {
+          // Create new scan record
+          scanId = await convex.mutation(api.scans.completeScan, convexData);
+          console.log("Successfully created new scan with ID:", scanId);
+        }
+      } catch (convexMutationError) {
+        console.error("Convex mutation failed:", convexMutationError);
+        throw convexMutationError; // Re-throw to trigger the outer catch
+      }
 
       return NextResponse.json({
         success: true,

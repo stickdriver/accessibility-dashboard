@@ -52,8 +52,8 @@ export const startScan = mutation({
       timestamp: Date.now(),
     });
 
-    // Schedule background scan processing
-    await ctx.scheduler.runAfter(0, "scanProcessor:processScan", { scanId });
+    // Scanner Service is now called directly from Dashboard Backend API
+    // Background scan processing is handled there
 
     return scanId;
   },
@@ -154,14 +154,13 @@ export const completeScan = mutation({
       scanType: args.scanType,
       status: "completed",
       progress: 100,
-      pagesScanned: args.scanType === "full_site" ? args.result.pagesScanned || 1 : 1,
+      pagesScanned: 1, // Single page scan
       totalIssues: args.result.violationCount,
-      criticalIssues: args.result.violations?.filter((v: any) => v.severity === "critical").length || 0,
+      criticalIssues: args.result.violations?.filter((v: any) => v.type === "error").length || 0,
       results: args.result,
       scanDuration: args.result.scanDuration || 0,
       completedAt: Date.now(),
-      jobId: args.jobId,
-      metadata: args.metadata,
+      asyncJobId: args.jobId,
     });
 
     // Track completion analytics
@@ -191,7 +190,6 @@ export const completeScanLegacy = mutation({
     results: v.any(),
     totalIssues: v.number(),
     criticalIssues: v.number(),
-    accessibilityScore: v.number(),
     scanDuration: v.number(),
   },
   handler: async (ctx: any, args: any) => {
@@ -201,7 +199,6 @@ export const completeScanLegacy = mutation({
       results: args.results,
       totalIssues: args.totalIssues,
       criticalIssues: args.criticalIssues,
-      accessibilityScore: args.accessibilityScore,
       scanDuration: args.scanDuration,
       completedAt: Date.now(),
     });
@@ -213,7 +210,6 @@ export const completeScanLegacy = mutation({
         scanId: args.scanId,
         totalIssues: args.totalIssues,
         duration: args.scanDuration,
-        score: args.accessibilityScore,
       },
       timestamp: Date.now(),
     });

@@ -4,7 +4,13 @@ import { api } from "../../../../../../convex/_generated/api";
 
 // Initialize ConvexHttpClient with fallback for build time
 const getConvexClient = () => {
-  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  let url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  
+  // Fallback to CONVEX_DEPLOYMENT if NEXT_PUBLIC_CONVEX_URL is not available
+  if (!url && process.env.CONVEX_DEPLOYMENT) {
+    url = `https://${process.env.CONVEX_DEPLOYMENT}.convex.cloud`;
+  }
+  
   if (!url) {
     throw new Error("NEXT_PUBLIC_CONVEX_URL environment variable is not set");
   }
