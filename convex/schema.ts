@@ -79,5 +79,18 @@ export default defineSchema({
     .index("by_user", ["clerkUserId"])
     .index("by_timestamp", ["timestamp"]),
 
+  remediationGuides: defineTable({
+    ruleCode: v.string(), // Pa11y rule code (e.g., "button-name", "color-contrast")
+    title: v.string(), // Human-readable title for the rule
+    guidance: v.string(), // Detailed remediation guidance
+    category: v.optional(v.string()), // Optional category (e.g., "forms", "navigation", "images")
+    wcagReference: v.optional(v.string()), // WCAG success criteria reference
+    severity: v.optional(v.string()), // Expected severity level
+    isActive: v.boolean(), // Allow disabling guidance
+    lastUpdated: v.number(), // Timestamp for cache invalidation
+  }).index("by_rule_code", ["ruleCode"])
+    .index("by_category", ["category"])
+    .index("by_active", ["isActive"]),
+
   // Remove password reset and email verification tables since Clerk handles these
 });

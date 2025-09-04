@@ -61,3 +61,8 @@ next-env.d.ts
 
 # Local development
 .localdeploy.sh
+
+# Deployment scripts (may contain secrets)
+*.sh
+deploy.sh
+setup.sh
