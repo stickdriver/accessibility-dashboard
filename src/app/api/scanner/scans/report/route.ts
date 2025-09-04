@@ -126,7 +126,8 @@ export async function POST(request: NextRequest) {
       const cleanedViolations = scanResult.violations ? 
         scanResult.violations.map((violation: any) => ({
           code: violation.code || "",
-          type: violation.type || "error", 
+          type: violation.type || "error",
+          impact: violation.impact || "moderate", // Use Scanner Service's new impact field
           message: violation.message || "", 
           selector: violation.selector || "",
           runner: violation.runner || "unknown",

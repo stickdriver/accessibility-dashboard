@@ -209,7 +209,7 @@ function convertV3ResponseToInternalFormat(v3Response: any) {
   // Convert violations to expected format
   const issues = v3Response.violations.map((violation: any) => ({
     id: violation.code || 'unknown',
-    impact: mapImpactToSeverity(violation.impact),
+    impact: violation.impact || 'moderate', // Use Scanner Service's impact field directly
     description: violation.message,
     help: violation.message, // V3 doesn't separate help text
     helpUrl: '', // V3 doesn't provide help URLs in legacy format

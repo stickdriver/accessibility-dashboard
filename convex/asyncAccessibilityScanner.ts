@@ -451,7 +451,7 @@ function convertV3AsyncResultToInternalFormat(asyncJobResult: any) {
   // Enhanced issue conversion with V3 engine attribution support
   const issues = scanResult.violations?.map((violation: any) => ({
     id: violation.code || 'unknown',
-    impact: mapImpactToSeverity(violation.impact),
+    impact: violation.impact || 'moderate', // Use Scanner Service's impact field directly
     description: violation.message,
     help: violation.message,
     helpUrl: '',
