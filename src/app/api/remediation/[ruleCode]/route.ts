@@ -35,7 +35,7 @@ async function getCachedGuide(ruleCode: string) {
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { ruleCode: string } }
 ) {
   try {
