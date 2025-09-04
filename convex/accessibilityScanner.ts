@@ -209,7 +209,7 @@ function convertV3ResponseToInternalFormat(v3Response: any) {
   // Convert violations to expected format
   const issues = v3Response.violations.map((violation: any) => ({
     id: violation.code || 'unknown',
-    impact: mapTypeToImpact(violation.type),
+    impact: mapImpactToSeverity(violation.impact),
     description: violation.message,
     help: violation.message, // V3 doesn't separate help text
     helpUrl: '', // V3 doesn't provide help URLs in legacy format
@@ -252,17 +252,19 @@ function convertV3ResponseToInternalFormat(v3Response: any) {
   };
 }
 
-// Map V3 violation type to impact level
-function mapTypeToImpact(type: string): string {
-  switch (type?.toLowerCase()) {
-    case 'error':
+// Map axe-core impact levels to our severity display
+function mapImpactToSeverity(impact: string): string {
+  switch (impact?.toLowerCase()) {
+    case 'critical':
       return 'critical';
-    case 'warning':
+    case 'serious':
       return 'serious';
-    case 'notice':
+    case 'moderate':
       return 'moderate';
-    default:
+    case 'minor':
       return 'minor';
+    default:
+      return 'moderate'; // Default fallback
   }
 }
 

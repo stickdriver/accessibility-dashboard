@@ -451,7 +451,7 @@ function convertV3AsyncResultToInternalFormat(asyncJobResult: any) {
   // Enhanced issue conversion with V3 engine attribution support
   const issues = scanResult.violations?.map((violation: any) => ({
     id: violation.code || 'unknown',
-    impact: mapTypeToImpact(violation.type),
+    impact: mapImpactToSeverity(violation.impact),
     description: violation.message,
     help: violation.message,
     helpUrl: '',
@@ -538,16 +538,19 @@ function convertV3AsyncResultToInternalFormat(asyncJobResult: any) {
 }
 
 // Helper functions (reused from sync scanner)
-function mapTypeToImpact(type: string): string {
-  switch (type?.toLowerCase()) {
-    case 'error':
+function mapImpactToSeverity(impact: string): string {
+  // Map axe-core impact levels to our severity display
+  switch (impact?.toLowerCase()) {
+    case 'critical':
       return 'critical';
-    case 'warning':
+    case 'serious':
       return 'serious';
-    case 'notice':
+    case 'moderate':
       return 'moderate';
-    default:
+    case 'minor':
       return 'minor';
+    default:
+      return 'moderate'; // Default fallback
   }
 }
 
