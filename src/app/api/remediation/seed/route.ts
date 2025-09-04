@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../../convex/_generated/api';
 
-const convexUrl = process.env.CONVEX_URL!;
-const convex = new ConvexHttpClient(convexUrl);
+function getConvexClient() {
+  const convexUrl = process.env.CONVEX_URL || process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!convexUrl) {
+    throw new Error('Convex URL not configured');
+  }
+  return new ConvexHttpClient(convexUrl);
+}
 
 // Seed data from the existing hardcoded guidance
 const seedGuidance = [
@@ -67,6 +72,7 @@ const seedGuidance = [
 
 export async function POST(_request: NextRequest) {
   try {
+    const convex = getConvexClient();
     // Insert the seed data
     const result = await convex.mutation(api.remediationGuides.bulkInsert, {
       guides: seedGuidance
@@ -94,6 +100,7 @@ export async function POST(_request: NextRequest) {
 // GET endpoint to check current status
 export async function GET() {
   try {
+    const convex = getConvexClient();
     const guides = await convex.query(api.remediationGuides.getAllActive, {});
     
     return NextResponse.json({

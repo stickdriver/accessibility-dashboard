@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../../convex/_generated/api';
 
-const convexUrl = process.env.CONVEX_URL!;
-const convex = new ConvexHttpClient(convexUrl);
-
 // In-memory cache for remediation guides
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
+
+function getConvexClient() {
+  const convexUrl = process.env.CONVEX_URL || process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!convexUrl) {
+    throw new Error('Convex URL not configured');
+  }
+  return new ConvexHttpClient(convexUrl);
+}
 
 async function getCachedGuide(ruleCode: string) {
   const cached = cache.get(ruleCode);
@@ -18,6 +23,7 @@ async function getCachedGuide(ruleCode: string) {
   }
   
   try {
+    const convex = getConvexClient();
     const guide = await convex.query(api.remediationGuides.getByRuleCode, { 
       ruleCode 
     });
