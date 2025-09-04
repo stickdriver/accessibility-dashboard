@@ -29,7 +29,7 @@ export async function GET(_request: NextRequest) {
     // Get user from Clerk for plan information
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
-    const planType = user.publicMetadata?.planType || 'starter';
+    const planType = (user.publicMetadata?.planType as string) || 'starter';
     
     // Get usage from Convex
     const convex = getConvexClient();
