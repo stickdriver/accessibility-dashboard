@@ -8,10 +8,10 @@ export const startScan = mutation({
   args: { 
     clerkUserId: v.string(),
     url: v.string(), 
-    scanType: v.union(v.literal("single_page"), v.literal("full_site")),
+    scanType: v.union(v.literal("single_page"), v.literal("multi_page")),
     options: v.optional(v.any())
   },
-  handler: async (ctx: any, { clerkUserId, url, scanType, options: _options = {} }: { clerkUserId: string, url: string, scanType: "single_page" | "full_site", options?: any }) => {
+  handler: async (ctx: any, { clerkUserId, url, scanType, options: _options = {} }: { clerkUserId: string, url: string, scanType: "single_page" | "multi_page", options?: any }) => {
 
     // Validate URL format
     try {
@@ -133,7 +133,7 @@ export const completeScan = mutation({
   args: {
     clerkUserId: v.string(),
     url: v.string(),
-    scanType: v.union(v.literal("single_page"), v.literal("full_site")),
+    scanType: v.union(v.literal("single_page"), v.literal("multi_page")),
     result: v.object({
       violationCount: v.number(),
       violations: v.optional(v.any()),

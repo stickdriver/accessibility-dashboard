@@ -8,7 +8,7 @@ const SCANNER_SERVICE_URL = "https://accessibility-service-pa11y.fly.dev";
 export const scanWebsiteAsync = action({
   args: {
     url: v.string(),
-    scanType: v.union(v.literal("single_page"), v.literal("full_site")),
+    scanType: v.union(v.literal("single_page"), v.literal("multi_page")),
     customerTier: v.optional(v.union(v.literal("starter"), v.literal("essential"), v.literal("professional"))),
     options: v.optional(v.object({
       timeout: v.optional(v.number()),
@@ -25,14 +25,14 @@ export const scanWebsiteAsync = action({
   },
   handler: async (_ctx: any, { url, scanType, customerTier = "starter", options = {}, scanId }: {
     url: string,
-    scanType: "single_page" | "full_site",
+    scanType: "single_page" | "multi_page",
     customerTier?: "starter" | "essential" | "professional",
     options?: any,
     scanId?: string
   }) => {
     // V3 service does not support full site scanning yet
-    if (scanType === "full_site") {
-      throw new Error("Full website scanning is temporarily unavailable. Our scanning service is being enhanced to support multi-page scans. Please try single page scanning for now.");
+    if (scanType === "multi_page") {
+      throw new Error("Multi-page scanning is temporarily unavailable. Our scanning service is being enhanced to support multi-page scans. Please try single page scanning for now.");
     }
     
     return await submitAsyncScan(url, scanType, customerTier, options, scanId);
@@ -88,7 +88,7 @@ export const cancelJob = action({
 // Submit async scan job to V3 service
 async function submitAsyncScan(
   url: string,
-  scanType: "single_page" | "full_site",
+  scanType: "single_page" | "multi_page",
   customerTier: string = "starter",
   options: any = {},
   scanId?: string
@@ -112,7 +112,7 @@ async function submitAsyncScan(
     subscriptionId: null, // Can be added later for premium features
     options: {
       timeout: options.timeout || 90000, // 90 seconds per page (Pa11y default)
-      maxPages: scanType === "full_site" ? (options.maxPages || 5) : 1,
+      maxPages: scanType === "multi_page" ? (options.maxPages || 5) : 1,
       userAgent: options.userAgent || 'AccessAudit Pro Scanner Bot 1.0',
       viewport: options.viewport || { width: 1920, height: 1080 },
       waitUntil: options.waitUntil || 'networkidle0'

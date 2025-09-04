@@ -326,11 +326,11 @@ async function performAsyncScanWithPolling(
   // Submit async job with V3 service integration
   const jobSubmission = await ctx.runAction("asyncAccessibilityScanner:scanWebsiteAsync", {
     url,
-    scanType: scanType as "single_page" | "full_site",
+    scanType: scanType as "single_page" | "multi_page",
     customerTier,
     options: {
       timeout: 90000, // 90 seconds per page
-      maxPages: scanType === "full_site" ? 5 : 1,
+      maxPages: scanType === "multi_page" ? 5 : 1,
       retryAttempts: 1
     },
     scanId: scanId

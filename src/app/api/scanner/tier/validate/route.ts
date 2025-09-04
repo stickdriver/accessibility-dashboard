@@ -1,6 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 
+// Make direct HTTP calls to Convex
+async function callConvexFunction(functionName: string, args: any = {}) {
+  const convexUrl = process.env.CONVEX_URL || process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!convexUrl) {
+    throw new Error("CONVEX_URL environment variable is not set");
+  }
+
+  const response = await fetch(`${convexUrl}/api/query`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      path: functionName,
+      args: args,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Convex function call failed: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
 // Validate that this request is from the Scanner Service
 function validateScannerAuth(request: NextRequest): boolean {
   const scannerApiKey = request.headers.get("X-Scanner-API-Key");
@@ -14,30 +39,36 @@ function validateScannerAuth(request: NextRequest): boolean {
   return scannerApiKey === expectedKey;
 }
 
-// Get tier configuration based on tier name
-function getTierConfig(tierName: string) {
-  const tiers: Record<string, any> = {
-    starter: {
-      maxPages: 1,
-      concurrentScans: 1,
-      features: ["basic_scanning"],
-      scansPerMonth: 10,
-    },
-    essential: {
-      maxPages: 25,
-      concurrentScans: 5,
-      features: ["basic_scanning", "full_site_scanning", "advanced_reporting"],
-      scansPerMonth: 100,
-    },
-    professional: {
-      maxPages: 100,
-      concurrentScans: 10,
-      features: ["basic_scanning", "full_site_scanning", "advanced_reporting", "api_access", "custom_runners"],
-      scansPerMonth: 500,
-    },
+// Get tier configuration from database
+async function getTierConfig(tierName: string) {
+  try {
+    const config = await callConvexFunction("tierConfigs:getByTierName", { 
+      tierName: tierName.toLowerCase() 
+    });
+    
+    if (config) {
+      return {
+        maxPages: config.maxPages,
+        maxDepth: config.maxDepth,
+        concurrentScans: config.concurrentScans,
+        features: config.features,
+        scansPerMonth: config.scanLimit,
+        websites: config.websites,
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching tier config from database:", error);
+  }
+  
+  // Fallback to starter tier defaults if database lookup fails
+  return {
+    maxPages: 1,
+    maxDepth: 0,
+    concurrentScans: 1,
+    features: ["basic_scanning"],
+    scansPerMonth: 10,
+    websites: 1,
   };
-
-  return tiers[tierName] || tiers.starter;
 }
 
 export async function POST(request: NextRequest) {
@@ -106,8 +137,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Get tier configuration
-      const tierConfig = getTierConfig(subscriptionTier as string);
+      // Get tier configuration from database
+      const tierConfig = await getTierConfig(subscriptionTier as string);
 
       // TODO: Get actual usage from database/usage tracking
       // For now, return placeholder usage remaining
@@ -118,7 +149,9 @@ export async function POST(request: NextRequest) {
         tier: subscriptionTier,
         subscriptionId: subscriptionId,
         maxPages: tierConfig.maxPages,
+        maxDepth: tierConfig.maxDepth,
         concurrentScans: tierConfig.concurrentScans,
+        websites: tierConfig.websites,
         features: tierConfig.features,
         usageRemaining: usageRemaining,
       });

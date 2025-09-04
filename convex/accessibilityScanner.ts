@@ -8,7 +8,7 @@ const SCANNER_SERVICE_URL = "https://accessibility-service-pa11y.fly.dev";
 export const scanWebsite = action({
   args: {
     url: v.string(),
-    scanType: v.union(v.literal("single_page"), v.literal("full_site")),
+    scanType: v.union(v.literal("single_page"), v.literal("multi_page")),
     options: v.optional(v.object({
       timeout: v.optional(v.number()),
       maxPages: v.optional(v.number()),
@@ -24,7 +24,7 @@ export const scanWebsite = action({
   },
   handler: async (_ctx: any, { url, scanType, options = {}, scanId }: {
     url: string,
-    scanType: "single_page" | "full_site",
+    scanType: "single_page" | "multi_page",
     options?: any,
     scanId?: string
   }) => {
@@ -35,7 +35,7 @@ export const scanWebsite = action({
 
 async function callAccessibilityScannerService(
   url: string,
-  scanType: "single_page" | "full_site",
+  scanType: "single_page" | "multi_page",
   options: any = {},
   scanId?: string
 ) {

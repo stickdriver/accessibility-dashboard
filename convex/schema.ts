@@ -8,7 +8,7 @@ export default defineSchema({
   scans: defineTable({
     clerkUserId: v.string(), // Use Clerk user ID instead of internal user ID
     websiteUrl: v.string(),
-    scanType: v.union(v.literal("single_page"), v.literal("full_site")),
+    scanType: v.union(v.literal("single_page"), v.literal("multi_page")),
     status: v.union(
       v.literal("pending"), 
       v.literal("running"), 
@@ -90,6 +90,19 @@ export default defineSchema({
     lastUpdated: v.number(), // Timestamp for cache invalidation
   }).index("by_rule_code", ["ruleCode"])
     .index("by_category", ["category"])
+    .index("by_active", ["isActive"]),
+
+  tierConfigs: defineTable({
+    tierName: v.string(),         // "starter", "essential", "professional"
+    scanLimit: v.number(),        // Monthly scan limit (10, 150, 500)
+    websites: v.number(),         // Number of websites allowed (1, 5, 999)
+    maxPages: v.number(),         // Pages per scan (1, 25, 100)
+    maxDepth: v.number(),         // Crawl depth for multi-page scans (0, 2, 3)
+    concurrentScans: v.number(),  // Simultaneous scans allowed
+    features: v.array(v.string()), // ["basic_scanning", "multi_page_scanning", "advanced_reporting"]
+    isActive: v.boolean(),        // Enable/disable tier
+    lastUpdated: v.number(),      // Unix timestamp
+  }).index("by_tier", ["tierName"])
     .index("by_active", ["isActive"]),
 
   // Remove password reset and email verification tables since Clerk handles these

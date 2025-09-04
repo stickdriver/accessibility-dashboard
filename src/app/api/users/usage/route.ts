@@ -39,14 +39,42 @@ export async function GET(_request: NextRequest) {
       monthYear: currentMonth
     });
 
-    // Define limits based on plan type
-    const limits = {
-      starter: { scansPerMonth: 10, pagesPerMonth: 100 },
-      essential: { scansPerMonth: 150, pagesPerMonth: 1500 },
-      professional: { scansPerMonth: 500, pagesPerMonth: 5000 }
-    };
+    // Get tier configuration from database instead of hardcoded values
+    let tierConfig;
+    try {
+      tierConfig = await convex.query(api.tierConfigs.getByTierName, { 
+        tierName: planType 
+      });
+    } catch (error) {
+      console.error("Error fetching tier config:", error);
+    }
 
-    const planLimits = limits[planType as keyof typeof limits] || limits.starter;
+    // Fallback to starter if no config found
+    if (!tierConfig) {
+      tierConfig = await convex.query(api.tierConfigs.getByTierName, { 
+        tierName: 'starter' 
+      });
+    }
+
+    // Build limits object from database tier configuration
+    const planLimits = tierConfig ? {
+      scansPerMonth: tierConfig.scanLimit,
+      pagesPerMonth: tierConfig.scanLimit * tierConfig.maxPages, // Total pages = scans × pages per scan
+      maxPages: tierConfig.maxPages, // Pages per individual scan
+      websites: tierConfig.websites,
+      maxDepth: tierConfig.maxDepth,
+      concurrentScans: tierConfig.concurrentScans,
+      features: tierConfig.features
+    } : {
+      // Ultimate fallback if database is unavailable
+      scansPerMonth: 10,
+      pagesPerMonth: 100,
+      maxPages: 1,
+      websites: 1,
+      maxDepth: 0,
+      concurrentScans: 1,
+      features: ["basic_scanning"]
+    };
 
     return NextResponse.json({
       success: true,

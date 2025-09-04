@@ -23,6 +23,7 @@ import type * as scanProgress from "../scanProgress.js";
 import type * as scanQueue from "../scanQueue.js";
 import type * as scans from "../scans.js";
 import type * as sourceMapping from "../sourceMapping.js";
+import type * as tierConfigs from "../tierConfigs.js";
 import type * as usage from "../usage.js";
 
 /**
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   scanQueue: typeof scanQueue;
   scans: typeof scans;
   sourceMapping: typeof sourceMapping;
+  tierConfigs: typeof tierConfigs;
   usage: typeof usage;
 }>;
 export declare const api: FilterApi<
