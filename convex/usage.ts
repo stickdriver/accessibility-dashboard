@@ -145,7 +145,7 @@ export const createUserUsageRecord = mutation({
     clerkUserId: v.string(),
     planType: v.optional(v.string())
   },
-  handler: async (ctx: any, { clerkUserId, planType = "starter" }) => {
+  handler: async (ctx: any, { clerkUserId }) => {
     const currentMonth = new Date().toISOString().substring(0, 7);
     
     // Check if usage record already exists
