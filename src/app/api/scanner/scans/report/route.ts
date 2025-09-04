@@ -129,8 +129,9 @@ export async function POST(request: NextRequest) {
           type: violation.type || "error", 
           message: violation.message || "", 
           selector: violation.selector || "",
-          runner: violation.runner || "unknown"
-          // Remove context, detectedBy, engineSpecific which can contain circular references
+          runner: violation.runner || "unknown",
+          context: violation.context || "" // Include context for better UX
+          // Remove detectedBy, engineSpecific which can contain circular references
         })) : [];
       
       // Log the data being sent to Convex for debugging
