@@ -138,3 +138,39 @@ export const getUserUsage = query({
     };
   },
 });
+
+// Create initial usage record for new user
+export const createUserUsageRecord = mutation({
+  args: {
+    clerkUserId: v.string(),
+    planType: v.optional(v.string())
+  },
+  handler: async (ctx: any, { clerkUserId, planType = "starter" }) => {
+    const currentMonth = new Date().toISOString().substring(0, 7);
+    
+    // Check if usage record already exists
+    const existingUsage = await ctx.db
+      .query("usage")
+      .withIndex("by_user_month", (q: any) => 
+        q.eq("clerkUserId", clerkUserId).eq("monthYear", currentMonth)
+      )
+      .first();
+    
+    if (!existingUsage) {
+      // Create initial usage record for new user
+      const newUsageRecord = await ctx.db.insert("usage", {
+        clerkUserId,
+        monthYear: currentMonth,
+        pagesScanned: 0,
+        scansPerformed: 0,
+        pdfDownloads: 0,
+        lastResetDate: Date.now(),
+      });
+      
+      console.log(`Created usage record for user ${clerkUserId}:`, newUsageRecord);
+      return { success: true, usageId: newUsageRecord };
+    }
+    
+    return { success: true, message: "Usage record already exists" };
+  }
+});
