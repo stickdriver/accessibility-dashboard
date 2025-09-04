@@ -43,16 +43,18 @@ export const createOrUpdate = mutation({
       .withIndex("by_rule_code", (q) => q.eq("ruleCode", args.ruleCode))
       .unique();
     
-    const data = {
+    const data: any = {
       ruleCode: args.ruleCode,
       title: args.title,
       guidance: args.guidance,
-      category: args.category,
-      wcagReference: args.wcagReference,
-      severity: args.severity,
       isActive: args.isActive ?? true,
       lastUpdated: Date.now(),
     };
+    
+    // Only add optional fields if they have values
+    if (args.category) data.category = args.category;
+    if (args.wcagReference) data.wcagReference = args.wcagReference;
+    if (args.severity) data.severity = args.severity;
     
     if (existing) {
       return await ctx.db.patch(existing._id, data);
@@ -85,11 +87,20 @@ export const bulkInsert = mutation({
         .unique();
       
       if (!existing) {
-        const result = await ctx.db.insert("remediationGuides", {
-          ...guide,
+        const data: any = {
+          ruleCode: guide.ruleCode,
+          title: guide.title,
+          guidance: guide.guidance,
           isActive: true,
           lastUpdated: timestamp,
-        });
+        };
+        
+        // Only add optional fields if they have values
+        if (guide.category) data.category = guide.category;
+        if (guide.wcagReference) data.wcagReference = guide.wcagReference;
+        if (guide.severity) data.severity = guide.severity;
+        
+        const result = await ctx.db.insert("remediationGuides", data);
         results.push(result);
       }
     }
