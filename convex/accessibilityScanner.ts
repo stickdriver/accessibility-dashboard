@@ -252,21 +252,6 @@ function convertV3ResponseToInternalFormat(v3Response: any) {
   };
 }
 
-// Map axe-core impact levels to our severity display
-function mapImpactToSeverity(impact: string): string {
-  switch (impact?.toLowerCase()) {
-    case 'critical':
-      return 'critical';
-    case 'serious':
-      return 'serious';
-    case 'moderate':
-      return 'moderate';
-    case 'minor':
-      return 'minor';
-    default:
-      return 'moderate'; // Default fallback
-  }
-}
 
 // Generate basic remediation tip
 function generateBasicRemediation(code: string): string {

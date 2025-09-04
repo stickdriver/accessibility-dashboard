@@ -538,21 +538,6 @@ function convertV3AsyncResultToInternalFormat(asyncJobResult: any) {
 }
 
 // Helper functions (reused from sync scanner)
-function mapImpactToSeverity(impact: string): string {
-  // Map axe-core impact levels to our severity display
-  switch (impact?.toLowerCase()) {
-    case 'critical':
-      return 'critical';
-    case 'serious':
-      return 'serious';
-    case 'moderate':
-      return 'moderate';
-    case 'minor':
-      return 'minor';
-    default:
-      return 'moderate'; // Default fallback
-  }
-}
 
 function generateBasicRemediation(code: string): string {
   const tips: Record<string, string> = {
