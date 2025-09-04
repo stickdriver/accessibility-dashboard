@@ -65,7 +65,7 @@ const seedGuidance = [
   }
 ];
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Insert the seed data
     const result = await convex.mutation(api.remediationGuides.bulkInsert, {
