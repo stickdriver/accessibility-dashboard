@@ -18,6 +18,7 @@ import type * as analytics from "../analytics.js";
 import type * as asyncAccessibilityScanner from "../asyncAccessibilityScanner.js";
 import type * as http from "../http.js";
 import type * as pdf from "../pdf.js";
+import type * as pdfStorage from "../pdfStorage.js";
 import type * as remediationGuides from "../remediationGuides.js";
 import type * as scanProcessor from "../scanProcessor.js";
 import type * as scanProgress from "../scanProgress.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   asyncAccessibilityScanner: typeof asyncAccessibilityScanner;
   http: typeof http;
   pdf: typeof pdf;
+  pdfStorage: typeof pdfStorage;
   remediationGuides: typeof remediationGuides;
   scanProcessor: typeof scanProcessor;
   scanProgress: typeof scanProgress;

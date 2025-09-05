@@ -47,6 +47,25 @@ export async function GET(
       return NextResponse.json({ error: "Scan not found" }, { status: 404 });
     }
 
+    // Check if PDF already exists in storage
+    if (scan.pdfReportId) {
+      // Get the download URL from Convex storage
+      const pdfUrl = await convex.query(api.pdfStorage.getPDFUrl, { scanId: scanId as any });
+      
+      if (pdfUrl) {
+        // Fetch the PDF from storage and return it
+        const pdfResponse = await fetch(pdfUrl);
+        const pdfBuffer = await pdfResponse.arrayBuffer();
+        
+        return new Response(pdfBuffer, {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename="accessibility-report-${scanId}.pdf"`,
+          },
+        });
+      }
+    }
+    
     // Check if scan is completed
     if (scan.status !== "completed") {
       return NextResponse.json(

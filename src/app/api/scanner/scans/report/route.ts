@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../../../convex/_generated/api";
+import { PDFService } from "../../../../../lib/pdf-service";
 
 // Initialize ConvexHttpClient with fallback for build time
 const getConvexClient = () => {
@@ -39,6 +40,64 @@ function validateScannerAuth(request: NextRequest): boolean {
   }
   
   return scannerApiKey === expectedKey;
+}
+
+// Generate PDF report for a completed scan
+async function generatePDFForScan(scanId: string, clerkUserId: string) {
+  try {
+    const convex = getConvexClient();
+    
+    // Get the complete scan data
+    const scan = await convex.query(api.scans.getScanById, { 
+      scanId: scanId as any,
+      clerkUserId: clerkUserId
+    });
+    
+    if (!scan) {
+      console.error("Scan not found for PDF generation:", scanId);
+      return;
+    }
+    
+    // Generate the PDF
+    const pdfService = new PDFService();
+    const pdfBuffer = await pdfService.generateAccessibilityReport({
+      ...scan,
+      scanId: scanId,
+      reportGeneratedAt: new Date().toISOString()
+    });
+    
+    // Get upload URL from Convex
+    const uploadUrl = await convex.mutation(api.pdfStorage.generateUploadUrl, {});
+    
+    // Upload the PDF to Convex storage
+    // Convert Buffer to Uint8Array for Blob constructor
+    const uint8Array = new Uint8Array(pdfBuffer);
+    const blob = new Blob([uint8Array], { type: "application/pdf" });
+    const uploadResponse = await fetch(uploadUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/pdf",
+      },
+      body: blob,
+    });
+    
+    if (!uploadResponse.ok) {
+      throw new Error("Failed to upload PDF to storage");
+    }
+    
+    const { storageId } = await uploadResponse.json();
+    
+    // Store the reference in the scan record
+    await convex.mutation(api.pdfStorage.storePDFReference, {
+      scanId: scanId as any,
+      storageId: storageId,
+    });
+    
+    console.log("PDF generated and stored for scan:", scanId, "Storage ID:", storageId);
+  } catch (error) {
+    console.error("Error generating PDF for scan:", scanId, error);
+    // Don't throw - this is async and shouldn't fail the scan completion
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -216,6 +275,12 @@ export async function POST(request: NextRequest) {
         console.error("Convex mutation failed:", convexMutationError);
         throw convexMutationError; // Re-throw to trigger the outer catch
       }
+
+      // Generate PDF report asynchronously after scan completion
+      // We don't await this so the scanner service gets immediate response
+      generatePDFForScan(scanId, userId).catch(error => {
+        console.error("Failed to generate PDF for scan:", scanId, error);
+      });
 
       return NextResponse.json({
         success: true,

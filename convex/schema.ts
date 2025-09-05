@@ -45,6 +45,8 @@ export default defineSchema({
     errorMessage: v.optional(v.string()),
     scanDuration: v.optional(v.number()), // seconds
     completedAt: v.optional(v.number()),
+    pdfReportId: v.optional(v.id("_storage")), // Convex storage ID for PDF report
+    pdfGeneratedAt: v.optional(v.number()), // Timestamp when PDF was generated
   }).index("by_user", ["clerkUserId"])
     .index("by_status", ["status"])
     .index("by_user_status", ["clerkUserId", "status"]),

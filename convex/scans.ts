@@ -91,6 +91,7 @@ export const getUserScans = query({
   },
 });
 
+
 export const getScanById = query({
   args: { 
     scanId: v.id("scans"),
