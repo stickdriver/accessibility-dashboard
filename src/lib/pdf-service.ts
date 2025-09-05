@@ -84,7 +84,7 @@ export class PDFService {
       console.log('Launching browser...');
       // Launch browser with optimal settings for PDF generation
       browser = await puppeteer.launch({
-        headless: 'new', // Use new headless mode
+        headless: true, // Use headless mode
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
         timeout: 60000, // Increase browser launch timeout
         args: [
