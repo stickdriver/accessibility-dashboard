@@ -82,6 +82,7 @@ export class PDFService {
       // Launch browser with optimal settings for PDF generation
       browser = await puppeteer.launch({
         headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -93,6 +94,7 @@ export class PDFService {
           '--disable-background-timer-throttling',
           '--disable-backgrounding-occluded-windows',
           '--disable-renderer-backgrounding',
+          '--disable-features=VizDisplayCompositor',
         ],
       });
 

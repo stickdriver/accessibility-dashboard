@@ -3,7 +3,15 @@ FROM node:18-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat python3 make g++ cairo-dev pango-dev libjpeg-turbo-dev giflib-dev librsvg-dev
+RUN apk add --no-cache libc6-compat python3 make g++ cairo-dev pango-dev libjpeg-turbo-dev giflib-dev librsvg-dev \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    && rm -rf /var/cache/apk/*
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager  
@@ -49,8 +57,22 @@ RUN mkdir -p public
 FROM base AS runner
 WORKDIR /app
 
+# Install Chromium for runtime PDF generation
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    && rm -rf /var/cache/apk/*
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+# Configure Puppeteer to use system Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Create a non-root user
 RUN addgroup --system --gid 1001 nodejs
