@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { PDFData } from './pdf-generation';
-import { PDFVisualGenerator, type SeverityData, type CategoryData, type WCAGPrincipleData } from './pdf-visual-generator';
+import { PDFVisualGenerator, type SeverityData, type CategoryData } from './pdf-visual-generator';
 
 export interface PDFTemplate {
   generateHTML(data: PDFData): string;
