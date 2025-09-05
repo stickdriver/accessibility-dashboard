@@ -174,3 +174,16 @@ export const createUserUsageRecord = mutation({
     return { success: true, message: "Usage record already exists" };
   }
 });
+
+// Public mutation for incrementing usage
+export const incrementUsageMutation = mutation({
+  args: {
+    clerkUserId: v.string(),
+    metric: v.union(v.literal("pagesScanned"), v.literal("scansPerformed"), v.literal("pdfDownloads")),
+    amount: v.number(),
+  },
+  handler: async (ctx: any, { clerkUserId, metric, amount }) => {
+    await incrementUsage(ctx, clerkUserId, metric, amount);
+    return { success: true };
+  }
+});
