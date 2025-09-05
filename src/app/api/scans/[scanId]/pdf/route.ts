@@ -111,7 +111,7 @@ export async function GET(
     }
 
     // Return PDF as downloadable file
-    return new Response(pdfBuffer, {
+    return new Response(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
