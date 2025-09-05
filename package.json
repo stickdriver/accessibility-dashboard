@@ -94,7 +94,9 @@
     "npm": ">=9.0.0"
   },
   "overrides": {
-    "canvas": "$canvas"
+    "jest-environment-jsdom": {
+      "canvas": "^3.2.0"
+    }
   },
   "husky": {
     "hooks": {
