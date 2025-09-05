@@ -1,14 +1,9 @@
 import { format } from 'date-fns';
 import { PDFData } from './pdf-generation';
+import { PDFVisualGenerator, type SeverityData, type CategoryData, type WCAGPrincipleData } from './pdf-visual-generator';
 
 export interface PDFTemplate {
-  generateHTML(data: PDFData, chartBuffers: ChartBuffers): string;
-}
-
-export interface ChartBuffers {
-  complianceChart: string; // Base64 encoded
-  severityChart: string;   // Base64 encoded
-  categoriesChart: string; // Base64 encoded
+  generateHTML(data: PDFData): string;
 }
 
 export class AccessibilityReportTemplate implements PDFTemplate {
@@ -22,7 +17,9 @@ export class AccessibilityReportTemplate implements PDFTemplate {
     dark: '#0f172a',
   };
 
-  public generateHTML(data: PDFData, charts: ChartBuffers): string {
+  private readonly visualGenerator = new PDFVisualGenerator();
+
+  public generateHTML(data: PDFData): string {
     const { scanData, complianceScore, pageBreakdown, recommendations } = data;
     const scanDate = scanData.completedAt ? format(new Date(scanData.completedAt), 'MMMM dd, yyyy') : 'N/A';
     const scanTime = scanData.completedAt ? format(new Date(scanData.completedAt), 'h:mm a') : 'N/A';
@@ -39,8 +36,8 @@ export class AccessibilityReportTemplate implements PDFTemplate {
         <body>
           ${this.generateCoverPage(scanData, complianceScore, scanDate, scanTime)}
           ${this.generateTableOfContents()}
-          ${this.generateExecutiveSummary(data, charts.complianceChart)}
-          ${this.generateDetailedFindings(data, charts.severityChart, charts.categoriesChart)}
+          ${this.generateExecutiveSummary(data)}
+          ${this.generateDetailedFindings(data)}
           ${this.generatePageBreakdown(pageBreakdown)}
           ${this.generateRecommendations(recommendations)}
           ${this.generateTechnicalAppendix(scanData)}
@@ -369,6 +366,9 @@ export class AccessibilityReportTemplate implements PDFTemplate {
             max-height: 400px;
           }
         }
+        
+        /* Include PDF Visual Generator Styles */
+        ${this.visualGenerator.CSS_STYLES}
       </style>
     `;
   }
@@ -423,16 +423,17 @@ export class AccessibilityReportTemplate implements PDFTemplate {
     `;
   }
 
-  private generateExecutiveSummary(data: PDFData, complianceChart: string): string {
+  private generateExecutiveSummary(data: PDFData): string {
     const { scanData, complianceScore, severityBreakdown, wcagCompliance } = data;
+    
+    // Generate HTML/CSS compliance visual
+    const complianceVisual = this.visualGenerator.generateComplianceCircle(complianceScore);
     
     return `
       <div class="page">
         <h1>Executive Summary</h1>
         
-        <div class="chart-container">
-          <img src="data:image/png;base64,${complianceChart}" alt="Compliance Score Chart" class="chart-image">
-        </div>
+        ${complianceVisual}
         
         <div class="summary-grid">
           <div class="summary-card">
@@ -478,29 +479,44 @@ export class AccessibilityReportTemplate implements PDFTemplate {
     `;
   }
 
-  private generateDetailedFindings(data: PDFData, severityChart: string, categoriesChart: string): string {
-    const { severityBreakdown } = data;
+  private generateDetailedFindings(data: PDFData): string {
+    const { scanData, severityBreakdown, categoryBreakdown = [] } = data;
+    
+    // Convert data to visual generator format
+    const severityData: SeverityData = {
+      critical: severityBreakdown.critical,
+      high: severityBreakdown.serious, // Map 'serious' to 'high'
+      medium: severityBreakdown.moderate,
+      low: severityBreakdown.minor
+    };
+    
+    const categoryData: CategoryData[] = categoryBreakdown.map((cat: any, index: number) => ({
+      name: cat.name || `Category ${index + 1}`,
+      description: cat.description || 'Accessibility issues in this category',
+      count: cat.count || 0,
+      iconKey: this.getCategoryIcon(cat.name || '')
+    }));
+    
+    // Generate HTML/CSS visuals
+    const severityVisual = this.visualGenerator.generateSeverityDistribution(severityData, scanData.totalIssues);
+    const categoryVisual = categoryData.length > 0 ? this.visualGenerator.generateCategoryBreakdown(categoryData) : '';
     
     return `
       <div class="page">
         <h1>Detailed Findings</h1>
         
-        <h2>Issues by Severity</h2>
-        <div class="chart-container">
-          <img src="data:image/png;base64,${severityChart}" alt="Severity Breakdown Chart" class="chart-image">
-        </div>
+        ${severityVisual}
         
-        <h2>Issues by Category</h2>
-        <div class="chart-container">
-          <img src="data:image/png;base64,${categoriesChart}" alt="Issues by Category Chart" class="chart-image">
-        </div>
+        ${categoryVisual ? categoryVisual : '<div class="report-section"><h2 class="section-title">Issues by Category</h2><p>Category breakdown data not available for this scan.</p></div>'}
         
-        <h2>Severity Impact</h2>
-        <div class="tech-details">
-          <p><strong>Critical (${severityBreakdown.critical}):</strong> Issues that completely prevent access to content or functionality for users with disabilities. These must be fixed immediately.</p>
-          <p><strong>Serious (${severityBreakdown.serious}):</strong> Issues that significantly impair the user experience for people with disabilities but may have workarounds.</p>
-          <p><strong>Moderate (${severityBreakdown.moderate}):</strong> Issues that create some barriers but don't completely prevent access to content.</p>
-          <p><strong>Minor (${severityBreakdown.minor}):</strong> Issues that may cause inconvenience but don't significantly impact accessibility.</p>
+        <div class="report-section">
+          <h2 class="section-title">Severity Impact Guide</h2>
+          <div class="tech-details">
+            <p><strong>Critical (${severityBreakdown.critical}):</strong> Issues that completely prevent access to content or functionality for users with disabilities. These must be fixed immediately.</p>
+            <p><strong>High (${severityBreakdown.serious}):</strong> Issues that significantly impair the user experience for people with disabilities but may have workarounds.</p>
+            <p><strong>Medium (${severityBreakdown.moderate}):</strong> Issues that create some barriers but don't completely prevent access to content.</p>
+            <p><strong>Low (${severityBreakdown.minor}):</strong> Issues that may cause inconvenience but don't significantly impact accessibility.</p>
+          </div>
         </div>
       </div>
     `;
@@ -635,5 +651,15 @@ export class AccessibilityReportTemplate implements PDFTemplate {
     if (score >= 80) return '#22c55e';
     if (score >= 60) return this.BRAND_COLORS.warning;
     return this.BRAND_COLORS.danger;
+  }
+  
+  private getCategoryIcon(categoryName: string): 'images' | 'forms' | 'navigation' | 'contrast' | 'structure' {
+    const name = categoryName.toLowerCase();
+    if (name.includes('image') || name.includes('media') || name.includes('alt')) return 'images';
+    if (name.includes('form') || name.includes('input') || name.includes('label')) return 'forms';
+    if (name.includes('nav') || name.includes('link') || name.includes('focus')) return 'navigation';
+    if (name.includes('color') || name.includes('contrast')) return 'contrast';
+    if (name.includes('structure') || name.includes('heading') || name.includes('landmark')) return 'structure';
+    return 'structure'; // Default fallback
   }
 }

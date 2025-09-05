@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
-import { PDFReportGenerator, PDFData, ScanData } from './pdf-generation';
-import { AccessibilityReportTemplate, ChartBuffers } from './pdf-template';
+import { PDFReportGenerator, ScanData } from './pdf-generation';
+import { AccessibilityReportTemplate } from './pdf-template';
 
 export interface PDFGenerationOptions {
   format: 'A4' | 'Letter';
@@ -37,11 +37,8 @@ export class PDFService {
       // Process scan data
       const pdfData = this.reportGenerator.processScanData(scanData);
       
-      // Generate charts
-      const chartBuffers = await this.generateCharts(pdfData);
-      
-      // Generate HTML content
-      const htmlContent = this.template.generateHTML(pdfData, chartBuffers);
+      // Generate HTML content with canvas-free visuals
+      const htmlContent = this.template.generateHTML(pdfData);
       
       // Generate PDF from HTML
       const pdfBuffer = await this.generatePDFFromHTML(htmlContent, options);
@@ -53,27 +50,7 @@ export class PDFService {
     }
   }
 
-  /**
-   * Generate chart images for the PDF report
-   */
-  private async generateCharts(data: PDFData): Promise<ChartBuffers> {
-    try {
-      const [complianceChart, severityChart, categoriesChart] = await Promise.all([
-        this.reportGenerator.generateComplianceChart(data.complianceScore),
-        this.reportGenerator.generateSeverityChart(data.severityBreakdown),
-        this.reportGenerator.generateCategoriesChart(data.issueCategories),
-      ]);
-
-      return {
-        complianceChart: complianceChart.toString('base64'),
-        severityChart: severityChart.toString('base64'),
-        categoriesChart: categoriesChart.toString('base64'),
-      };
-    } catch (error) {
-      console.error('Error generating charts:', error);
-      throw new Error(`Failed to generate charts: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
+  // Canvas chart generation removed - using HTML/CSS visuals instead
 
   /**
    * Convert HTML content to PDF using Puppeteer
@@ -134,8 +111,8 @@ export class PDFService {
         timeout: 30000,
       });
 
-      // Additional wait for charts and images to render
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Additional wait for CSS visuals to render
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Generate PDF with high quality settings
       const pdfOptions: any = {

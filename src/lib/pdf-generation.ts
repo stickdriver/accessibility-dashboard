@@ -1,29 +1,4 @@
-import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
-import {
-  Chart,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement,
-} from 'chart.js';
-
-// Register Chart.js components
-Chart.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement
-);
+// Canvas dependencies removed - using HTML/CSS visuals instead
 
 export interface ScanData {
   _id: string;
@@ -80,29 +55,18 @@ export interface PDFData {
   issueCategories: {
     [category: string]: number;
   };
+  categoryBreakdown: {
+    name: string;
+    description: string;
+    count: number;
+  }[];
   recommendations: string[];
 }
 
 export class PDFReportGenerator {
-  private chartRenderer: ChartJSNodeCanvas;
-  private readonly BRAND_COLORS = {
-    primary: '#2563eb', // Blue
-    secondary: '#64748b', // Slate
-    success: '#16a34a', // Green
-    warning: '#ea580c', // Orange
-    danger: '#dc2626', // Red
-    accent: '#7c3aed', // Purple
-  };
 
   constructor() {
-    this.chartRenderer = new ChartJSNodeCanvas({
-      width: 800,
-      height: 400,
-      backgroundColour: 'white',
-      plugins: {
-        modern: ['chartjs-adapter-date-fns'],
-      },
-    });
+    // Canvas dependency removed - using HTML/CSS visuals instead
   }
 
   /**
@@ -115,6 +79,7 @@ export class PDFReportGenerator {
     const wcagCompliance = this.calculateWCAGCompliance(issues);
     const pageBreakdown = this.calculatePageBreakdown(scanData.pages || []);
     const issueCategories = this.categorizeIssues(issues);
+    const categoryBreakdown = this.generateCategoryBreakdown(issueCategories);
     const recommendations = this.generateRecommendations(issues, severityBreakdown);
 
     return {
@@ -124,204 +89,33 @@ export class PDFReportGenerator {
       wcagCompliance,
       pageBreakdown,
       issueCategories,
+      categoryBreakdown,
       recommendations,
     };
   }
 
   /**
-   * Generate compliance score chart
+   * Generate category breakdown for visual display
    */
-  public async generateComplianceChart(complianceScore: number): Promise<Buffer> {
-    const configuration = {
-      type: 'doughnut' as const,
-      data: {
-        labels: ['Compliant', 'Issues Found'],
-        datasets: [
-          {
-            data: [complianceScore, 100 - complianceScore],
-            backgroundColor: [this.BRAND_COLORS.success, this.BRAND_COLORS.danger],
-            borderWidth: 0,
-          },
-        ],
-      },
-      options: {
-        responsive: false,
-        plugins: {
-          legend: {
-            position: 'bottom' as const,
-            labels: {
-              usePointStyle: true,
-              padding: 20,
-              font: {
-                size: 14,
-                family: 'Arial',
-              },
-            },
-          },
-          title: {
-            display: true,
-            text: `Overall Compliance Score: ${complianceScore.toFixed(1)}%`,
-            font: {
-              size: 18,
-              weight: 'bold' as const,
-              family: 'Arial',
-            },
-            padding: {
-              top: 10,
-              bottom: 30,
-            },
-          },
-        },
-        cutout: '60%',
-      },
-    };
-
-    return await this.chartRenderer.renderToBuffer(configuration as any);
+  private generateCategoryBreakdown(issueCategories: { [category: string]: number }): PDFData['categoryBreakdown'] {
+    return Object.entries(issueCategories).map(([name, count]) => ({
+      name,
+      description: this.getCategoryDescription(name),
+      count,
+    }));
   }
-
-  /**
-   * Generate severity breakdown chart
-   */
-  public async generateSeverityChart(severityBreakdown: PDFData['severityBreakdown']): Promise<Buffer> {
-    const configuration = {
-      type: 'bar' as const,
-      data: {
-        labels: ['Critical', 'Serious', 'Moderate', 'Minor'],
-        datasets: [
-          {
-            label: 'Number of Issues',
-            data: [
-              severityBreakdown.critical,
-              severityBreakdown.serious,
-              severityBreakdown.moderate,
-              severityBreakdown.minor,
-            ],
-            backgroundColor: [
-              this.BRAND_COLORS.danger,
-              '#f97316', // Orange-500
-              this.BRAND_COLORS.warning,
-              '#eab308', // Yellow-500
-            ],
-            borderWidth: 1,
-            borderColor: '#ffffff',
-          },
-        ],
-      },
-      options: {
-        responsive: false,
-        plugins: {
-          legend: {
-            display: false,
-          },
-          title: {
-            display: true,
-            text: 'Issues by Severity Level',
-            font: {
-              size: 16,
-              weight: 'bold' as const,
-              family: 'Arial',
-            },
-            padding: {
-              top: 10,
-              bottom: 30,
-            },
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              stepSize: 1,
-              font: {
-                size: 12,
-                family: 'Arial',
-              },
-            },
-            grid: {
-              color: '#e5e7eb',
-            },
-          },
-          x: {
-            ticks: {
-              font: {
-                size: 12,
-                family: 'Arial',
-              },
-            },
-            grid: {
-              display: false,
-            },
-          },
-        },
-      },
+  
+  private getCategoryDescription(categoryName: string): string {
+    const descriptions: { [key: string]: string } = {
+      'Color & Contrast': 'Issues with color contrast ratios and visual accessibility',
+      'Keyboard Navigation': 'Problems with keyboard access and focus management',
+      'Images & Media': 'Missing alt text and media accessibility issues',
+      'Forms': 'Form labels, validation, and input accessibility problems',
+      'Structure': 'Heading hierarchy and semantic structure issues',
+      'Interactive Elements': 'Button, link, and interactive component problems',
+      'Other': 'Miscellaneous accessibility issues'
     };
-
-    return await this.chartRenderer.renderToBuffer(configuration as any);
-  }
-
-  /**
-   * Generate issue categories chart
-   */
-  public async generateCategoriesChart(issueCategories: { [category: string]: number }): Promise<Buffer> {
-    const categories = Object.keys(issueCategories);
-    const counts = Object.values(issueCategories);
-    
-    const colors = [
-      this.BRAND_COLORS.primary,
-      this.BRAND_COLORS.accent,
-      this.BRAND_COLORS.secondary,
-      this.BRAND_COLORS.warning,
-      '#06b6d4', // Cyan-500
-      '#84cc16', // Lime-500
-      '#f59e0b', // Amber-500
-      '#ef4444', // Red-500
-    ];
-
-    const configuration = {
-      type: 'pie' as const,
-      data: {
-        labels: categories,
-        datasets: [
-          {
-            data: counts,
-            backgroundColor: colors.slice(0, categories.length),
-            borderWidth: 2,
-            borderColor: '#ffffff',
-          },
-        ],
-      },
-      options: {
-        responsive: false,
-        plugins: {
-          legend: {
-            position: 'right' as const,
-            labels: {
-              usePointStyle: true,
-              padding: 15,
-              font: {
-                size: 12,
-                family: 'Arial',
-              },
-            },
-          },
-          title: {
-            display: true,
-            text: 'Issues by Category',
-            font: {
-              size: 16,
-              weight: 'bold' as const,
-              family: 'Arial',
-            },
-            padding: {
-              top: 10,
-              bottom: 30,
-            },
-          },
-        },
-      },
-    };
-
-    return await this.chartRenderer.renderToBuffer(configuration as any);
+    return descriptions[categoryName] || 'Accessibility issues in this category';
   }
 
   private extractIssuesFromScan(scanData: ScanData): IssueData[] {
