@@ -162,7 +162,7 @@ export async function POST(
 
     const { scanId } = params;
     const body = await request.json();
-    const { options = {} } = body;
+    const { _options = {} } = body;
 
     if (!scanId) {
       return NextResponse.json({ error: "Scan ID is required" }, { status: 400 });
