@@ -11,7 +11,6 @@ import {
   PointElement,
   LineElement,
 } from 'chart.js';
-import { format } from 'date-fns';
 
 // Register Chart.js components
 Chart.register(
