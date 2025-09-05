@@ -32,15 +32,53 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Since we've changed the architecture to call Scanner Service directly from Dashboard Backend,
-    // this endpoint is no longer used in the main flow but kept for compatibility
+    // Extract the JWT token and validate with Clerk
+    const token = authHeader.replace("Bearer ", "");
     
-    // For now, return a basic success response if we have a Bearer token
-    return NextResponse.json({
-      valid: true,
-      userId: "authenticated-user",
-      email: "user@example.com",
-    });
+    try {
+      // Import Clerk server utilities
+      const { verifyToken } = await import("@clerk/backend");
+      
+      // Check for secret key
+      const secretKey = process.env.CLERK_SECRET_KEY;
+      if (!secretKey) {
+        console.error("Missing CLERK_SECRET_KEY environment variable");
+        return NextResponse.json(
+          { valid: false, error: "Server configuration error" },
+          { status: 500 }
+        );
+      }
+      
+      // Verify the token with Clerk
+      const payload = await verifyToken(token, {
+        secretKey,
+      });
+
+      if (!payload || !payload.sub) {
+        return NextResponse.json(
+          { valid: false, error: "Invalid token" },
+          { status: 401 }
+        );
+      }
+
+      // Get user details from Clerk
+      const { clerkClient } = await import("@clerk/nextjs/server");
+      const client = await clerkClient();
+      const user = await client.users.getUser(payload.sub);
+
+      return NextResponse.json({
+        valid: true,
+        userId: payload.sub, // This is the Clerk user ID
+        email: user.emailAddresses[0]?.emailAddress || "unknown@example.com",
+      });
+
+    } catch (clerkError) {
+      console.error("Clerk token validation failed:", clerkError);
+      return NextResponse.json(
+        { valid: false, error: "Token validation failed" },
+        { status: 401 }
+      );
+    }
 
   } catch (error) {
     console.error("Error validating authentication:", error);

@@ -2,8 +2,28 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  // Remove users table since Clerk handles user management
-  // Keep only scan-related data and analytics
+  // User profiles - cached from Clerk with app-specific data
+  users: defineTable({
+    clerkUserId: v.string(),           // Foreign key to Clerk
+    email: v.string(),                 // Cached from Clerk  
+    name: v.string(),                  // Cached from Clerk
+    
+    // App-specific data
+    subscriptionTier: v.string(),      // "starter", "essential", "professional"
+    onboardingCompleted: v.boolean(),  // User flow tracking
+    preferences: v.any(),              // UI preferences, notifications
+    
+    // Business metrics
+    signupSource: v.optional(v.string()), // Marketing attribution
+    lastActiveAt: v.number(),          // Usage analytics
+    lifetimeScans: v.number(),         // Business metrics
+    
+    // Metadata
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_clerk_id", ["clerkUserId"])
+    .index("by_tier", ["subscriptionTier"])
+    .index("by_last_active", ["lastActiveAt"]),
   
   scans: defineTable({
     clerkUserId: v.string(), // Use Clerk user ID instead of internal user ID

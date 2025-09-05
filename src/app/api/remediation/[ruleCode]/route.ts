@@ -24,9 +24,12 @@ async function getCachedGuide(ruleCode: string) {
   
   try {
     const convex = getConvexClient();
+    console.log('Fetching remediation guide for rule code:', ruleCode);
     const guide = await convex.query(api.remediationGuides.getByRuleCode, { 
       ruleCode 
     });
+    
+    console.log('Remediation guide result:', guide ? 'found' : 'not found');
     
     cache.set(ruleCode, {
       data: guide,
@@ -35,7 +38,7 @@ async function getCachedGuide(ruleCode: string) {
     
     return guide;
   } catch (error) {
-    console.error('Error fetching remediation guide:', error);
+    console.error('Error fetching remediation guide for code:', ruleCode, error);
     return null;
   }
 }
