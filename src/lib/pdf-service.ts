@@ -135,7 +135,7 @@ export class PDFService {
       });
 
       // Additional wait for charts and images to render
-      await page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Generate PDF with high quality settings
       const pdfBuffer = await page.pdf({
