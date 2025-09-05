@@ -104,7 +104,7 @@ export class PDFService {
 
       // Launch browser with optimal settings for PDF generation
       browser = await puppeteer.launch({
-        headless: 'new',
+        headless: true,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
