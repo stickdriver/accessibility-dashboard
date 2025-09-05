@@ -160,10 +160,22 @@ export const completeScan = mutation({
       progress: 100,
       pagesScanned: 1, // Single page scan
       totalIssues: args.result.violationCount,
-      criticalIssues: args.result.violations?.filter((v: any) => v.impact === "critical" || v.type === "error").length || 0,
-      seriousIssues: args.result.violations?.filter((v: any) => v.impact === "serious" || (v.impact === "moderate" && v.type === "error")).length || 0,
-      moderateIssues: args.result.violations?.filter((v: any) => v.impact === "moderate" && v.type !== "error").length || 0,
-      minorIssues: args.result.violations?.filter((v: any) => v.impact === "minor" || v.type === "notice").length || 0,
+      criticalIssues: args.result.violations?.filter((v: any) => {
+        const severity = v.severity || v.impact || v.type;
+        return severity?.toLowerCase() === "critical" || severity?.toLowerCase() === "error";
+      }).length || 0,
+      seriousIssues: args.result.violations?.filter((v: any) => {
+        const severity = v.severity || v.impact || v.type;
+        return severity?.toLowerCase() === "serious" || severity?.toLowerCase() === "warning";
+      }).length || 0,
+      moderateIssues: args.result.violations?.filter((v: any) => {
+        const severity = v.severity || v.impact || v.type;
+        return severity?.toLowerCase() === "moderate" || severity?.toLowerCase() === "notice";
+      }).length || 0,
+      minorIssues: args.result.violations?.filter((v: any) => {
+        const severity = v.severity || v.impact || v.type;
+        return severity?.toLowerCase() === "minor" || (!severity || !["critical", "error", "serious", "warning", "moderate", "notice"].includes(severity?.toLowerCase()));
+      }).length || 0,
       results: args.result,
       scanDuration: args.result.scanDuration || 0,
       completedAt: Date.now(),

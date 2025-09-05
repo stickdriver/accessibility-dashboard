@@ -157,6 +157,18 @@ export async function POST(request: NextRequest) {
 
       // Log the incoming scan result for debugging
       console.log("Received scan result:", JSON.stringify(scanResult, null, 2));
+      
+      // Debug: Log violation impacts to understand severity mapping
+      if (scanResult.violations && scanResult.violations.length > 0) {
+        const impactCounts = {};
+        const typeCounts = {};
+        scanResult.violations.forEach((v: any) => {
+          impactCounts[v.impact] = (impactCounts[v.impact] || 0) + 1;
+          typeCounts[v.type] = (typeCounts[v.type] || 0) + 1;
+        });
+        console.log("🔍 Violation impact distribution:", impactCounts);
+        console.log("🔍 Violation type distribution:", typeCounts);
+      }
 
       // Parse scanDuration if it's a string (Go duration format) or convert from nanoseconds
       let scanDurationMs = 0;
