@@ -62,6 +62,8 @@ export class PDFService {
     let browser;
     
     try {
+      console.log('Starting PDF generation process...');
+      
       const defaultOptions: PDFGenerationOptions = {
         format: 'A4',
         orientation: 'portrait',
@@ -79,10 +81,12 @@ export class PDFService {
 
       const finalOptions = { ...defaultOptions, ...options };
 
+      console.log('Launching browser...');
       // Launch browser with optimal settings for PDF generation
       browser = await puppeteer.launch({
-        headless: true,
+        headless: 'new', // Use new headless mode
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+        timeout: 60000, // Increase browser launch timeout
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -95,10 +99,16 @@ export class PDFService {
           '--disable-backgrounding-occluded-windows',
           '--disable-renderer-backgrounding',
           '--disable-features=VizDisplayCompositor',
+          '--disable-extensions',
+          '--disable-default-apps',
+          '--single-process', // Use single process for containers
+          '--memory-pressure-off',
         ],
       });
+      console.log('Browser launched successfully');
 
       const page = await browser.newPage();
+      console.log('New page created');
 
       // Set viewport for consistent rendering
       await page.setViewport({
@@ -106,17 +116,33 @@ export class PDFService {
         height: 720,
         deviceScaleFactor: 2, // Higher DPI for better quality
       });
+      console.log('Viewport set');
 
-      // Set content and wait for all resources to load
+      // Set content with more reliable waiting strategy for containers
+      console.log('Setting page content...');
       await page.setContent(htmlContent, {
-        waitUntil: ['networkidle0', 'domcontentloaded'],
-        timeout: 30000,
+        waitUntil: 'domcontentloaded', // More reliable than networkidle0 in containers
+        timeout: 60000, // Increase timeout to 60 seconds
       });
+      console.log('Page content set successfully');
 
-      // Additional wait for CSS visuals to render
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for CSS animations and visuals to complete
+      console.log('Waiting for CSS rendering...');
+      await page.evaluate(() => {
+        return new Promise((resolve) => {
+          if (document.readyState === 'complete') {
+            setTimeout(resolve, 2000); // Give more time for CSS visuals
+          } else {
+            document.addEventListener('DOMContentLoaded', () => {
+              setTimeout(resolve, 2000);
+            });
+          }
+        });
+      });
+      console.log('CSS rendering complete');
 
       // Generate PDF with high quality settings
+      console.log('Generating PDF...');
       const pdfOptions: any = {
         format: finalOptions.format,
         landscape: finalOptions.orientation === 'landscape',
@@ -137,6 +163,7 @@ export class PDFService {
       }
       
       const pdfBuffer = await page.pdf(pdfOptions);
+      console.log(`PDF generated successfully, size: ${pdfBuffer.length} bytes`);
 
       return Buffer.from(pdfBuffer);
     } catch (error) {
