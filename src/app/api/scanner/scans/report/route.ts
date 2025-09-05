@@ -160,11 +160,13 @@ export async function POST(request: NextRequest) {
       
       // Debug: Log violation impacts to understand severity mapping
       if (scanResult.violations && scanResult.violations.length > 0) {
-        const impactCounts = {};
-        const typeCounts = {};
+        const impactCounts: Record<string, number> = {};
+        const typeCounts: Record<string, number> = {};
         scanResult.violations.forEach((v: any) => {
-          impactCounts[v.impact] = (impactCounts[v.impact] || 0) + 1;
-          typeCounts[v.type] = (typeCounts[v.type] || 0) + 1;
+          const impact = v.impact || 'unknown';
+          const type = v.type || 'unknown';
+          impactCounts[impact] = (impactCounts[impact] || 0) + 1;
+          typeCounts[type] = (typeCounts[type] || 0) + 1;
         });
         console.log("🔍 Violation impact distribution:", impactCounts);
         console.log("🔍 Violation type distribution:", typeCounts);
