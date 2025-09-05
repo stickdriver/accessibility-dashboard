@@ -38,6 +38,9 @@ export const startScan = mutation({
       pagesScanned: 0,
       totalIssues: 0,
       criticalIssues: 0,
+      seriousIssues: 0,
+      moderateIssues: 0,
+      minorIssues: 0,
       results: {},
     });
 
@@ -157,7 +160,10 @@ export const completeScan = mutation({
       progress: 100,
       pagesScanned: 1, // Single page scan
       totalIssues: args.result.violationCount,
-      criticalIssues: args.result.violations?.filter((v: any) => v.type === "error").length || 0,
+      criticalIssues: args.result.violations?.filter((v: any) => v.impact === "critical" || v.type === "error").length || 0,
+      seriousIssues: args.result.violations?.filter((v: any) => v.impact === "serious" || (v.impact === "moderate" && v.type === "error")).length || 0,
+      moderateIssues: args.result.violations?.filter((v: any) => v.impact === "moderate" && v.type !== "error").length || 0,
+      minorIssues: args.result.violations?.filter((v: any) => v.impact === "minor" || v.type === "notice").length || 0,
       results: args.result,
       scanDuration: args.result.scanDuration || 0,
       completedAt: Date.now(),

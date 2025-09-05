@@ -227,8 +227,6 @@ export async function POST(request: NextRequest) {
         originalViolationsLength: scanResult.violations?.length || 0,
         scanDurationMs: scanDurationMs,
         jobId: jobId,
-        isUUID: jobId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId),
-        willTryUpdate: jobId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId),
       });
 
       // Debug: Log the complete data being sent to Convex (truncated for safety)
@@ -240,37 +238,11 @@ export async function POST(request: NextRequest) {
         }
       }, null, 2));
 
-      // Store the scan result in Convex - update existing scan if jobId matches a scanId
+      // Store the scan result in Convex
       let scanId;
       try {
-        // Check if jobId is NOT a UUID (UUIDs have format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-        // If it's not a UUID, it's likely a Convex ID that we should try to update
-        const isUUID = jobId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(jobId);
-        const shouldTryUpdate = jobId && !isUUID;
-        
-        if (shouldTryUpdate) {
-          // If jobId is not a UUID, assume it's a Convex ID and try to update existing scan
-          try {
-            await convex.mutation(api.scans.completeScanLegacy, {
-              scanId: jobId,
-              results: convexData.result,
-              totalIssues: convexData.result.violationCount,
-              criticalIssues: cleanedViolations.filter((v: any) => v.type === "error").length,
-              scanDuration: scanDurationMs
-            });
-            scanId = jobId; // Use existing scanId
-            console.log("Successfully updated existing scan with ID:", scanId);
-          } catch (updateError) {
-            console.error("Failed to update existing scan, creating new one:", updateError);
-            // Fall back to creating new scan
-            scanId = await convex.mutation(api.scans.completeScan, convexData);
-            console.log("Successfully created new scan with ID:", scanId);
-          }
-        } else {
-          // Create new scan record
-          scanId = await convex.mutation(api.scans.completeScan, convexData);
-          console.log("Successfully created new scan with ID:", scanId);
-        }
+        scanId = await convex.mutation(api.scans.completeScan, convexData);
+        console.log("Successfully created new scan with ID:", scanId);
       } catch (convexMutationError) {
         console.error("Convex mutation failed:", convexMutationError);
         throw convexMutationError; // Re-throw to trigger the outer catch
