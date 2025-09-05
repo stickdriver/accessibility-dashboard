@@ -161,8 +161,7 @@ export async function POST(
     }
 
     const { scanId } = params;
-    const body = await request.json();
-    const { _options = {} } = body;
+    await request.json(); // Parse request body (future options support)
 
     if (!scanId) {
       return NextResponse.json({ error: "Scan ID is required" }, { status: 400 });
