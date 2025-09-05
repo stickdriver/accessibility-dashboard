@@ -138,20 +138,28 @@ export class PDFService {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Generate PDF with high quality settings
-      const pdfBuffer = await page.pdf({
+      const pdfOptions: any = {
         format: finalOptions.format,
         landscape: finalOptions.orientation === 'landscape',
         margin: finalOptions.margins,
         displayHeaderFooter: finalOptions.displayHeaderFooter,
-        headerTemplate: finalOptions.headerTemplate,
-        footerTemplate: finalOptions.footerTemplate,
         printBackground: finalOptions.printBackground,
         preferCSSPageSize: true,
         omitBackground: false,
         tagged: true, // For accessibility
-      });
+      };
+      
+      if (finalOptions.headerTemplate) {
+        pdfOptions.headerTemplate = finalOptions.headerTemplate;
+      }
+      
+      if (finalOptions.footerTemplate) {
+        pdfOptions.footerTemplate = finalOptions.footerTemplate;
+      }
+      
+      const pdfBuffer = await page.pdf(pdfOptions);
 
-      return pdfBuffer;
+      return Buffer.from(pdfBuffer);
     } catch (error) {
       console.error('Error in PDF generation:', error);
       throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -401,16 +401,17 @@ export class PDFReportGenerator {
 
   private calculatePageBreakdown(pages: PageData[]): PDFData['pageBreakdown'] {
     return pages.map(page => {
-      const result: PDFData['pageBreakdown'][0] = {
+      const baseResult = {
         url: page.pageUrl,
         title: page.pageTitle || 'Untitled Page',
         issueCount: page.issues?.length || 0,
         criticalIssues: page.issues?.filter(i => i.type === 'error').length || 0,
       };
+      
       if (page.loadTime !== null && page.loadTime !== undefined) {
-        result.loadTime = page.loadTime;
+        return { ...baseResult, loadTime: page.loadTime };
       }
-      return result;
+      return baseResult;
     });
   }
 
