@@ -23,7 +23,7 @@ export class AccessibilityReportTemplate implements PDFTemplate {
   };
 
   public generateHTML(data: PDFData, charts: ChartBuffers): string {
-    const { scanData, complianceScore, severityBreakdown, wcagCompliance, pageBreakdown, issueCategories, recommendations } = data;
+    const { scanData, complianceScore, pageBreakdown, recommendations } = data;
     const scanDate = scanData.completedAt ? format(new Date(scanData.completedAt), 'MMMM dd, yyyy') : 'N/A';
     const scanTime = scanData.completedAt ? format(new Date(scanData.completedAt), 'h:mm a') : 'N/A';
 
