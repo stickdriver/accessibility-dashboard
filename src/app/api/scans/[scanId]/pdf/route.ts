@@ -111,7 +111,7 @@ export async function GET(
     }
 
     // Return PDF as downloadable file
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as ArrayBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
