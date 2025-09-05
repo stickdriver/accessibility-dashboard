@@ -82,28 +82,39 @@ export class PDFService {
       const finalOptions = { ...defaultOptions, ...options };
 
       console.log('Launching browser...');
-      // Launch browser with optimal settings for PDF generation
+      // Launch browser with aggressive container-optimized settings
       browser = await puppeteer.launch({
-        headless: true, // Use headless mode
+        headless: true,
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
-        timeout: 60000, // Increase browser launch timeout
+        timeout: 120000, // 2 minute timeout for browser launch
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
           '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor,AudioServiceOutOfProcess',
+          '--single-process',
+          '--no-zygote',
+          '--no-first-run',
+          '--disable-default-apps',
+          '--disable-extensions',
           '--disable-background-timer-throttling',
           '--disable-backgrounding-occluded-windows',
           '--disable-renderer-backgrounding',
-          '--disable-features=VizDisplayCompositor',
-          '--disable-extensions',
-          '--disable-default-apps',
-          '--single-process', // Use single process for containers
+          '--disable-ipc-flooding-protection',
+          '--disable-hang-monitor',
+          '--disable-prompt-on-repost',
+          '--disable-client-side-phishing-detection',
+          '--disable-sync',
+          '--metrics-recording-only',
+          '--safebrowsing-disable-auto-update',
+          '--disable-background-networking',
+          '--disable-domain-reliability',
           '--memory-pressure-off',
+          '--max_old_space_size=4096',
         ],
+        ignoreDefaultArgs: ['--disable-extensions'], // Avoid duplicate flags
       });
       console.log('Browser launched successfully');
 
@@ -168,10 +179,21 @@ export class PDFService {
       return Buffer.from(pdfBuffer);
     } catch (error) {
       console.error('Error in PDF generation:', error);
+      
+      // Check if the error is related to browser launch
+      if (error instanceof Error && error.message.includes('timeout')) {
+        throw new Error(`PDF generation timed out. The browser failed to launch within the timeout period. This may be due to system resource constraints.`);
+      }
+      
       throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       if (browser) {
-        await browser.close();
+        try {
+          await browser.close();
+          console.log('Browser closed successfully');
+        } catch (closeError) {
+          console.error('Error closing browser:', closeError);
+        }
       }
     }
   }
