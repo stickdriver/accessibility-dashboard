@@ -163,7 +163,7 @@ export class PDFReportGenerator {
             text: `Overall Compliance Score: ${complianceScore.toFixed(1)}%`,
             font: {
               size: 18,
-              weight: 'bold',
+              weight: 'bold' as const,
               family: 'Arial',
             },
             padding: {
@@ -176,7 +176,7 @@ export class PDFReportGenerator {
       },
     };
 
-    return await this.chartRenderer.renderToBuffer(configuration);
+    return await this.chartRenderer.renderToBuffer(configuration as any);
   }
 
   /**
@@ -218,7 +218,7 @@ export class PDFReportGenerator {
             text: 'Issues by Severity Level',
             font: {
               size: 16,
-              weight: 'bold',
+              weight: 'bold' as const,
               family: 'Arial',
             },
             padding: {
@@ -256,7 +256,7 @@ export class PDFReportGenerator {
       },
     };
 
-    return await this.chartRenderer.renderToBuffer(configuration);
+    return await this.chartRenderer.renderToBuffer(configuration as any);
   }
 
   /**
@@ -309,7 +309,7 @@ export class PDFReportGenerator {
             text: 'Issues by Category',
             font: {
               size: 16,
-              weight: 'bold',
+              weight: 'bold' as const,
               family: 'Arial',
             },
             padding: {
@@ -321,7 +321,7 @@ export class PDFReportGenerator {
       },
     };
 
-    return await this.chartRenderer.renderToBuffer(configuration);
+    return await this.chartRenderer.renderToBuffer(configuration as any);
   }
 
   private extractIssuesFromScan(scanData: ScanData): IssueData[] {
@@ -405,7 +405,7 @@ export class PDFReportGenerator {
       title: page.pageTitle || 'Untitled Page',
       issueCount: page.issues?.length || 0,
       criticalIssues: page.issues?.filter(i => i.type === 'error').length || 0,
-      loadTime: page.loadTime,
+      loadTime: page.loadTime ?? undefined,
     }));
   }
 
@@ -457,31 +457,31 @@ export class PDFReportGenerator {
     // Category-specific recommendations
     const categories = this.categorizeIssues(issues);
     
-    if (categories['Color & Contrast'] > 0) {
+    if (categories['Color & Contrast'] && categories['Color & Contrast'] > 0) {
       recommendations.push(
         'Improve color contrast ratios to meet WCAG AA standards (4.5:1 for normal text, 3:1 for large text).'
       );
     }
 
-    if (categories['Keyboard Navigation'] > 0) {
+    if (categories['Keyboard Navigation'] && categories['Keyboard Navigation'] > 0) {
       recommendations.push(
         'Ensure all interactive elements are keyboard accessible and have visible focus indicators.'
       );
     }
 
-    if (categories['Images & Media'] > 0) {
+    if (categories['Images & Media'] && categories['Images & Media'] > 0) {
       recommendations.push(
         'Add descriptive alternative text for all images and multimedia content.'
       );
     }
 
-    if (categories['Forms'] > 0) {
+    if (categories['Forms'] && categories['Forms'] > 0) {
       recommendations.push(
         'Provide clear labels and instructions for all form fields and error handling.'
       );
     }
 
-    if (categories['Structure'] > 0) {
+    if (categories['Structure'] && categories['Structure'] > 0) {
       recommendations.push(
         'Use proper heading hierarchy and semantic HTML structure for better navigation.'
       );
