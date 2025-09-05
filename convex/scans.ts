@@ -151,36 +151,78 @@ export const completeScan = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx: any, args: any) => {
-    // Create scan record with completed status
-    const scanId = await ctx.db.insert("scans", {
-      clerkUserId: args.clerkUserId,
-      websiteUrl: args.url,
-      scanType: args.scanType,
-      status: "completed",
-      progress: 100,
-      pagesScanned: 1, // Single page scan
-      totalIssues: args.result.violationCount,
-      criticalIssues: args.result.violations?.filter((v: any) => {
-        const severity = v.severity || v.impact || v.type;
-        return severity?.toLowerCase() === "critical" || severity?.toLowerCase() === "error";
-      }).length || 0,
-      seriousIssues: args.result.violations?.filter((v: any) => {
-        const severity = v.severity || v.impact || v.type;
-        return severity?.toLowerCase() === "serious" || severity?.toLowerCase() === "warning";
-      }).length || 0,
-      moderateIssues: args.result.violations?.filter((v: any) => {
-        const severity = v.severity || v.impact || v.type;
-        return severity?.toLowerCase() === "moderate" || severity?.toLowerCase() === "notice";
-      }).length || 0,
-      minorIssues: args.result.violations?.filter((v: any) => {
-        const severity = v.severity || v.impact || v.type;
-        return severity?.toLowerCase() === "minor" || (!severity || !["critical", "error", "serious", "warning", "moderate", "notice"].includes(severity?.toLowerCase()));
-      }).length || 0,
-      results: args.result,
-      scanDuration: args.result.scanDuration || 0,
-      completedAt: Date.now(),
-      asyncJobId: args.jobId,
-    });
+    // Find existing scan by jobId or create new one if not found
+    let existingScan = null;
+    let scanId: string;
+    
+    if (args.jobId) {
+      try {
+        existingScan = await ctx.db.get(args.jobId);
+      } catch (error) {
+        console.log("JobId not found as scan ID, creating new scan:", args.jobId);
+      }
+    }
+    
+    if (existingScan) {
+      // Update existing scan record
+      await ctx.db.patch(args.jobId, {
+        status: "completed",
+        progress: 100,
+        pagesScanned: 1, // Single page scan
+        totalIssues: args.result.violationCount,
+        criticalIssues: args.result.violations?.filter((v: any) => {
+          const severity = v.severity || v.impact || v.type;
+          return severity?.toLowerCase() === "critical" || severity?.toLowerCase() === "error";
+        }).length || 0,
+        seriousIssues: args.result.violations?.filter((v: any) => {
+          const severity = v.severity || v.impact || v.type;
+          return severity?.toLowerCase() === "serious" || severity?.toLowerCase() === "warning";
+        }).length || 0,
+        moderateIssues: args.result.violations?.filter((v: any) => {
+          const severity = v.severity || v.impact || v.type;
+          return severity?.toLowerCase() === "moderate" || severity?.toLowerCase() === "notice";
+        }).length || 0,
+        minorIssues: args.result.violations?.filter((v: any) => {
+          const severity = v.severity || v.impact || v.type;
+          return severity?.toLowerCase() === "minor" || (!severity || !["critical", "error", "serious", "warning", "moderate", "notice"].includes(severity?.toLowerCase()));
+        }).length || 0,
+        results: args.result,
+        scanDuration: args.result.scanDuration || 0,
+        completedAt: Date.now(),
+      });
+      scanId = args.jobId;
+    } else {
+      // Create new scan record if no existing scan found
+      scanId = await ctx.db.insert("scans", {
+        clerkUserId: args.clerkUserId,
+        websiteUrl: args.url,
+        scanType: args.scanType,
+        status: "completed",
+        progress: 100,
+        pagesScanned: 1, // Single page scan
+        totalIssues: args.result.violationCount,
+        criticalIssues: args.result.violations?.filter((v: any) => {
+          const severity = v.severity || v.impact || v.type;
+          return severity?.toLowerCase() === "critical" || severity?.toLowerCase() === "error";
+        }).length || 0,
+        seriousIssues: args.result.violations?.filter((v: any) => {
+          const severity = v.severity || v.impact || v.type;
+          return severity?.toLowerCase() === "serious" || severity?.toLowerCase() === "warning";
+        }).length || 0,
+        moderateIssues: args.result.violations?.filter((v: any) => {
+          const severity = v.severity || v.impact || v.type;
+          return severity?.toLowerCase() === "moderate" || severity?.toLowerCase() === "notice";
+        }).length || 0,
+        minorIssues: args.result.violations?.filter((v: any) => {
+          const severity = v.severity || v.impact || v.type;
+          return severity?.toLowerCase() === "minor" || (!severity || !["critical", "error", "serious", "warning", "moderate", "notice"].includes(severity?.toLowerCase()));
+        }).length || 0,
+        results: args.result,
+        scanDuration: args.result.scanDuration || 0,
+        completedAt: Date.now(),
+        asyncJobId: args.jobId,
+      });
+    }
 
     // Track completion analytics
     await ctx.db.insert("analytics", {
