@@ -41,6 +41,9 @@ export default defineSchema({
     pagesScanned: v.number(),
     totalIssues: v.number(),
     criticalIssues: v.number(),
+    seriousIssues: v.number(),
+    moderateIssues: v.number(),
+    minorIssues: v.number(),
     results: v.any(), // JSON scan results
     errorMessage: v.optional(v.string()),
     scanDuration: v.optional(v.number()), // seconds
@@ -49,7 +52,8 @@ export default defineSchema({
     pdfGeneratedAt: v.optional(v.number()), // Timestamp when PDF was generated
   }).index("by_user", ["clerkUserId"])
     .index("by_status", ["status"])
-    .index("by_user_status", ["clerkUserId", "status"]),
+    .index("by_user_status", ["clerkUserId", "status"])
+    .index("by_async_job_id", ["asyncJobId"]),
 
   scanPages: defineTable({
     scanId: v.id("scans"),

@@ -44,6 +44,15 @@ ENV ENABLE_ANALYTICS=$ENABLE_ANALYTICS
 ENV DASHBOARD_TITLE=$DASHBOARD_TITLE
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Debug: Check environment variables before build
+RUN echo "🔍 DEBUG: Environment variables during build:" && \
+    echo "NODE_ENV=${NODE_ENV}" && \
+    echo "NEXT_PUBLIC_CONVEX_URL=${NEXT_PUBLIC_CONVEX_URL}" && \
+    echo "CLERK_SECRET_KEY=${CLERK_SECRET_KEY:+[SET]}" && \
+    echo "SCANNER_SERVICE_URL=${SCANNER_SERVICE_URL}" && \
+    echo "ENABLE_ANALYTICS=${ENABLE_ANALYTICS}" && \
+    echo "DASHBOARD_TITLE=${DASHBOARD_TITLE}"
+
 # Build the application
 RUN \
   if [ -f package-lock.json ]; then npm run build; \

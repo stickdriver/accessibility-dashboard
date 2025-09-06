@@ -44,7 +44,7 @@ export const startScan = mutation({
       results: {},
     });
 
-    // Store the scan ID as asyncJobId for Scanner Service tracking
+    // Set asyncJobId to scanId so completeScan can find this record later
     await ctx.db.patch(scanId, {
       asyncJobId: scanId,
     });
@@ -156,24 +156,14 @@ export const completeScan = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx: any, args: any) => {
-    // DEBUG: Log all the args to understand what we're getting
-    console.log("🔍 COMPLETESCAN DEBUG - Full args:", JSON.stringify({
-      clerkUserId: args.clerkUserId,
-      url: args.url,
-      scanType: args.scanType,
-      jobId: args.jobId,
-      jobIdType: typeof args.jobId,
-      jobIdValue: args.jobId,
-      hasJobId: !!args.jobId,
-      jobIdLength: args.jobId?.length
-    }, null, 2));
+    // Log scan completion for monitoring
+    console.log(`Processing scan completion for jobId: ${args.jobId}`);
     
     // Find existing scan by jobId or create new one if not found
     let existingScan = null;
     let scanId: string;
     
     if (args.jobId) {
-      console.log("🔍 Attempting to find existing scan with asyncJobId:", args.jobId);
       try {
         // Query for scan where asyncJobId matches the provided jobId
         const scanQuery = await ctx.db
@@ -183,17 +173,10 @@ export const completeScan = mutation({
           
         if (scanQuery) {
           existingScan = scanQuery;
-          console.log("✅ SUCCESS: Found existing scan for asyncJobId:", args.jobId, "Will UPDATE existing record");
-        } else {
-          console.log("❌ FAILED: No scan found with asyncJobId:", args.jobId);
-          console.log("❌ Will CREATE NEW scan instead of updating existing");
         }
       } catch (error) {
-        console.log("❌ ERROR: Failed to query for asyncJobId:", args.jobId, "Error:", error);
-        console.log("❌ Will CREATE NEW scan instead of updating existing");
+        console.error("Failed to query for asyncJobId:", args.jobId, error);
       }
-    } else {
-      console.log("⚠️ NO JOBID: No jobId provided in args, will create new scan");
     }
     
     if (existingScan) {
