@@ -171,20 +171,20 @@ export const completeScan = mutation({
         pagesScanned: 1, // Single page scan
         totalIssues: args.result.violationCount,
         criticalIssues: args.result.violations?.filter((v: any) => {
-          const severity = v.severity || v.impact || v.type;
-          return severity?.toLowerCase() === "critical" || severity?.toLowerCase() === "error";
+          // Only use impact field from axe, not Pa11y's type field
+          return v.impact?.toLowerCase() === "critical";
         }).length || 0,
         seriousIssues: args.result.violations?.filter((v: any) => {
-          const severity = v.severity || v.impact || v.type;
-          return severity?.toLowerCase() === "serious" || severity?.toLowerCase() === "warning";
+          // Only use impact field from axe, not Pa11y's type field
+          return v.impact?.toLowerCase() === "serious";
         }).length || 0,
         moderateIssues: args.result.violations?.filter((v: any) => {
-          const severity = v.severity || v.impact || v.type;
-          return severity?.toLowerCase() === "moderate" || severity?.toLowerCase() === "notice";
+          // Only use impact field from axe, not Pa11y's type field
+          return v.impact?.toLowerCase() === "moderate";
         }).length || 0,
         minorIssues: args.result.violations?.filter((v: any) => {
-          const severity = v.severity || v.impact || v.type;
-          return severity?.toLowerCase() === "minor" || (!severity || !["critical", "error", "serious", "warning", "moderate", "notice"].includes(severity?.toLowerCase()));
+          // Only use impact field from axe, not Pa11y's type field
+          return v.impact?.toLowerCase() === "minor";
         }).length || 0,
         results: args.result,
         scanDuration: args.result.scanDuration || 0,
@@ -202,20 +202,20 @@ export const completeScan = mutation({
         pagesScanned: 1, // Single page scan
         totalIssues: args.result.violationCount,
         criticalIssues: args.result.violations?.filter((v: any) => {
-          const severity = v.severity || v.impact || v.type;
-          return severity?.toLowerCase() === "critical" || severity?.toLowerCase() === "error";
+          // Only use impact field from axe, not Pa11y's type field
+          return v.impact?.toLowerCase() === "critical";
         }).length || 0,
         seriousIssues: args.result.violations?.filter((v: any) => {
-          const severity = v.severity || v.impact || v.type;
-          return severity?.toLowerCase() === "serious" || severity?.toLowerCase() === "warning";
+          // Only use impact field from axe, not Pa11y's type field
+          return v.impact?.toLowerCase() === "serious";
         }).length || 0,
         moderateIssues: args.result.violations?.filter((v: any) => {
-          const severity = v.severity || v.impact || v.type;
-          return severity?.toLowerCase() === "moderate" || severity?.toLowerCase() === "notice";
+          // Only use impact field from axe, not Pa11y's type field
+          return v.impact?.toLowerCase() === "moderate";
         }).length || 0,
         minorIssues: args.result.violations?.filter((v: any) => {
-          const severity = v.severity || v.impact || v.type;
-          return severity?.toLowerCase() === "minor" || (!severity || !["critical", "error", "serious", "warning", "moderate", "notice"].includes(severity?.toLowerCase()));
+          // Only use impact field from axe, not Pa11y's type field
+          return v.impact?.toLowerCase() === "minor";
         }).length || 0,
         results: args.result,
         scanDuration: args.result.scanDuration || 0,
