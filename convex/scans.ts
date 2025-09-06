@@ -44,6 +44,11 @@ export const startScan = mutation({
       results: {},
     });
 
+    // Store the scan ID as asyncJobId for Scanner Service tracking
+    await ctx.db.patch(scanId, {
+      asyncJobId: scanId,
+    });
+
     // Update usage
     await incrementUsage(ctx, clerkUserId, "scansPerformed", 1);
 
@@ -151,21 +156,49 @@ export const completeScan = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx: any, args: any) => {
+    // DEBUG: Log all the args to understand what we're getting
+    console.log("🔍 COMPLETESCAN DEBUG - Full args:", JSON.stringify({
+      clerkUserId: args.clerkUserId,
+      url: args.url,
+      scanType: args.scanType,
+      jobId: args.jobId,
+      jobIdType: typeof args.jobId,
+      jobIdValue: args.jobId,
+      hasJobId: !!args.jobId,
+      jobIdLength: args.jobId?.length
+    }, null, 2));
+    
     // Find existing scan by jobId or create new one if not found
     let existingScan = null;
     let scanId: string;
     
     if (args.jobId) {
+      console.log("🔍 Attempting to find existing scan with asyncJobId:", args.jobId);
       try {
-        existingScan = await ctx.db.get(args.jobId);
+        // Query for scan where asyncJobId matches the provided jobId
+        const scanQuery = await ctx.db
+          .query("scans")
+          .filter((q: any) => q.eq(q.field("asyncJobId"), args.jobId))
+          .first();
+          
+        if (scanQuery) {
+          existingScan = scanQuery;
+          console.log("✅ SUCCESS: Found existing scan for asyncJobId:", args.jobId, "Will UPDATE existing record");
+        } else {
+          console.log("❌ FAILED: No scan found with asyncJobId:", args.jobId);
+          console.log("❌ Will CREATE NEW scan instead of updating existing");
+        }
       } catch (error) {
-        console.log("JobId not found as scan ID, creating new scan:", args.jobId);
+        console.log("❌ ERROR: Failed to query for asyncJobId:", args.jobId, "Error:", error);
+        console.log("❌ Will CREATE NEW scan instead of updating existing");
       }
+    } else {
+      console.log("⚠️ NO JOBID: No jobId provided in args, will create new scan");
     }
     
     if (existingScan) {
       // Update existing scan record
-      await ctx.db.patch(args.jobId, {
+      await ctx.db.patch(existingScan._id, {
         status: "completed",
         progress: 100,
         pagesScanned: 1, // Single page scan
@@ -190,7 +223,7 @@ export const completeScan = mutation({
         scanDuration: args.result.scanDuration || 0,
         completedAt: Date.now(),
       });
-      scanId = args.jobId;
+      scanId = existingScan._id;
     } else {
       // Create new scan record if no existing scan found
       scanId = await ctx.db.insert("scans", {
